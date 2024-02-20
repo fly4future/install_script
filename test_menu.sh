@@ -21,12 +21,12 @@ else
 
   sudo apt update
 
-  dialog_installed=$(apt-cache policy dialog | grep Installed | grep none)
+  whiptail_installed=$(apt-cache policy whiptail | grep Installed | grep none)
 
-  if [ ! -z "$dialog_installed" ]
+  if [ ! -z "$whiptail_installed" ]
   then
-    echo "Dialog NOT installed, will install now:"
-    sudo apt install dialog
+    echo "Whiptail NOT installed, will install now:"
+    sudo apt install whiptail
   fi
 fi
 
