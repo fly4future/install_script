@@ -25,8 +25,10 @@ main() {
             sudo apt -y install ros-noetic-mrs-uav-system-full
             ;;
           *)
+            exit 1
             ;;
         esac
       }
 
 main
+exit 0
