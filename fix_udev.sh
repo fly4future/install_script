@@ -58,48 +58,55 @@ error_msg () {
   whiptail --title "Netplan config" --msgbox "$1" 0 0
 }
 
-# yesno_def_yes "Delete any previous netplan configs? (Recommended)"
-# ret_val=$?
+OPTIONS=()
 
-# if [ $ret_val -eq 1 ]; then
-#   sudo rm /etc/netplan/*
-# fi
+folder_path="/etc/udev/rules.d"
+for file in "$folder_path"/*; do
+  # Add each filename to the array
+  filename="${file##*"/"}"
+  filename="${filename%.*}"
+  filename="${filename//_/ }"
+
+  if [[ ! -d ${file} ]]; then
+    has_99=$(echo $filename | grep "99")
+    if [ ! -z "${has_99}" ]; then
+      OPTIONS+=("$filename")
+      echo $filename
+    fi
+
+  fi
+done
+# echo $OPTIONS
 
 
 FILENAME=/tmp/99-usb-serial-MRS.rules
 
 rm $FILENAME
 touch $FILENAME
-devices=$(ls /dev | grep -e ttyUSB -e ttyACM)
-echo $devices
+#devices=$(ls /dev | grep -e ttyUSB -e ttyACM)
+#echo $devices
 
 
-if [ -z "${devices}" ]; then
-  error_msg "No devices matching the ttyUSBx or ttyACMx pattern found."
-else
-  for device in ${devices}; do
-    echo "Now operating on:" 
-    echo $device 
+#if [ -z "${devices}" ]; then
+#  error_msg "No devices matching the ttyUSBx or ttyACMx pattern found."
+#else
+#  for device in ${devices}; do
+#    echo "Now operating on:"
+#    echo $device
 
-    echo $(udevadm info /dev/$device | grep -e "S: serial/by-id/" -e "ID_BUS")
-    # echo $pes
-
-    # yesno_def_no "Do you want to use DHCP on $name?"
-    # ret_val=$?
-
-    # if [ $ret_val -eq 1 ]; then
-    #   echo "      dhcp4: yes" >> /tmp/01-netcfg.yaml
-    #   echo "      dhcp6: no" >> /tmp/01-netcfg.yaml
-    # elif [ $ret_val -eq 0 ]; then
-    #   echo "      dhcp4: no" >> /tmp/01-netcfg.yaml
-    #   echo "      dhcp6: no" >> /tmp/01-netcfg.yaml
-
-    #   address=$(input_box "Enter your static IP address:" "10.10.20.101")
-    #   echo "      addresses: [$address/24]" >> /tmp/01-netcfg.yaml
-
-    # fi
-  done
-fi
+#    #This is not nice, but whatever, it can be slow :D
+#    echo $(udevadm info /dev/$device | grep "S: serial/by-id/");
+#    echo $(udevadm info /dev/$device | grep "DEVNAME");
+#    echo $(udevadm info /dev/$device | grep "ID_VENDOR_FROM_DATABASE");
+#    echo $(udevadm info /dev/$device | grep "ID_MODEL_FROM_DATABASE");
+#    echo $(udevadm info /dev/$device | grep "ID_VENDOR_ID");
+#    echo $(udevadm info /dev/$device | grep "ID_MODEL=");
+#    echo $(udevadm info /dev/$device | grep "ID_SERIAL=");
+#    echo $(udevadm info /dev/$device | grep "ID_SERIAL_SHORT");
+#    echo $(udevadm info /dev/$device | grep "ID_PCI_CLASS_FROM_DATABASE");
+#    echo $(udevadm info /dev/$device | grep "ID_PCI_SUBCLASS_FROM_DATABASE");
+#  done
+#fi
 
 # echo "network:" >> /tmp/01-netcfg.yaml
 # echo "  version: 2" >> /tmp/01-netcfg.yaml
