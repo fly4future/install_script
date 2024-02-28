@@ -52,14 +52,14 @@ FULL_FILEPATHS=()
 folder_path="/etc/udev/rules.d"
 index="1"
 for file in "$folder_path"/*; do
-  OPTIONS+=("$index")
-  let "index++"
   filename=$file
   filename="${file##*"/"}"
   # filename="${filename%.*}"
   # filename="${filename//_/ }"
 
   if [[ ! -d ${file} ]]; then
+    OPTIONS+=("$index")
+    let "index++"
     has_99=$(echo $filename | grep "99")
     OPTIONS+=("$filename")
     FULL_FILEPATHS+=("$file")

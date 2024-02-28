@@ -72,6 +72,7 @@ main() {
   while true; do
     clear
     choice=$(show_menu)
+
     if [ $? -eq 0 ]; then
       echo ${FULL_FILEPATHS[$((choice - 1))]}
       # ${FULL_FILEPATHS[$((choice - 1))]}
@@ -96,11 +97,18 @@ main() {
 index="1"
 for file in "$folder_path"/*; do
   # Add each filename to the array
+  disregard=$(echo $file | grep "DISREGARD")
+  if [ ! -z "$disregard" ]
+  then
+    continue
+  fi
+
   OPTIONS+=("$index")
   let "index++"
   filename="${file##*"/"}"
   filename="${filename%.*}"
   filename="${filename//_/ }"
+  filename="${filename#[[:digit:]]}" #removes the first digit from script name
 
   if [[ -d ${file} ]]; then
     OPTIONS+=("$filename ...")

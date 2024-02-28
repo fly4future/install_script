@@ -1,0 +1,3 @@
+Vsechny akce a vystupy terminalu logovat to log filu s datem a casem - pro debug
+Kontrola online - aby byl skript pozitelny i bez internetu
+
