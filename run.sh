@@ -128,12 +128,13 @@ if [ "$first_run" = true ] ; then
 
   if [ $? -eq 0 ]; then
     echo -e "${green}Online${normal}"
+    sudo apt update
   else
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"
-    exit 1
+    echo -e "${red}${bold}You will not be to install/update any new software!${normal}"
+    echo -e "${red}${bold}You can however still use some of the configuration scripts${normal}"
+    read -p "${blink}${bold}Hit enter to continue ...${normal}"
   fi
-
-  sudo apt update
 
   #Check for whiptail
   whiptail_installed=$(apt-cache policy whiptail | grep Installed | grep none)
