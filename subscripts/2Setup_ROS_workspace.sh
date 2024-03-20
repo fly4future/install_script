@@ -68,6 +68,7 @@ for CHOICE in $SELECTIONS; do
       ;;
     "3") git clone https://github.com/ctu-mrs/mrs_uav_development.git
       ln -s ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/
+      add_to_bashrc "source ~/git/mrs_uav_development/shell_additions/shell_additions.sh" "\nsource ~/git/mrs_uav_development/shell_additions/shell_additions.sh"
       ;;
     *)
       exit 1
