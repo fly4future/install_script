@@ -51,9 +51,6 @@ entry=black,brightgreen
 
 
 DIR="$(dirname "$(readlink -f "$0")")"
-echo $DIR
-echo $DIR2
-exit 0
 folder_path=""
 first_run=true
 if [ -z "$1" ]
