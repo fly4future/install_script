@@ -60,7 +60,7 @@ then
   sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
   sudo chmod +x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
 else
-  folder_path="./$1"
+  folder_path="$1"
   first_run=false
 fi
 
