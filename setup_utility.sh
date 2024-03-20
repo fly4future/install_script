@@ -56,8 +56,8 @@ if [ -z "$1" ]
 then
   folder_path="./subscripts"
   sudo chmod -R +x "./subscripts"
-  sudo chmod -R -x './subscripts/4Udev_rules/DISREGARD_udev_rules'
-  sudo chmod +x './subscripts/4Udev_rules/DISREGARD_udev_rules'
+  sudo chmod -R -x './subscripts/5Udev_rules/DISREGARD_udev_rules'
+  sudo chmod +x './subscripts/5Udev_rules/DISREGARD_udev_rules'
 else
   folder_path="./$1"
   first_run=false
