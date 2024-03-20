@@ -50,14 +50,15 @@ entry=black,brightgreen
 # Specify the folder path where your files are located
 
 
+DIR="$(cd "$(dirname "$0")" && pwd)"
 folder_path=""
 first_run=true
 if [ -z "$1" ]
 then
-  folder_path="./subscripts"
-  sudo chmod -R +x "./subscripts"
-  sudo chmod -R -x './subscripts/5Udev_rules/DISREGARD_udev_rules'
-  sudo chmod +x './subscripts/5Udev_rules/DISREGARD_udev_rules'
+  folder_path="$DIR/subscripts"
+  sudo chmod -R +x "$DIR/subscripts"
+  sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
+  sudo chmod +x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
 else
   folder_path="./$1"
   first_run=false
