@@ -50,7 +50,10 @@ entry=black,brightgreen
 # Specify the folder path where your files are located
 
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(dirname "$(readlink -f "$0")")"
+echo $DIR
+echo $DIR2
+exit 0
 folder_path=""
 first_run=true
 if [ -z "$1" ]
