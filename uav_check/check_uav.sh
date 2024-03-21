@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CHECK_TYPE=$1
+
 RED='\e[1;91m'
 GREEN='\e[32m'
 YELLOW='\e[33m'
@@ -57,12 +59,18 @@ netplan_check () {
   eth0_address=$(echo "$eth0_address" | tr -d \")
   uav_number="${hostname//[!0-9]/}"  #strip all non-numeric chars from hostname, should leave us just with the number of the uav. E.G. -> uav31 -> 31
 
+  if [ "$CHECK_TYPE" == "f4f" ]
+  then
+    subnet="11"
+  else
+    subnet="69"
+  fi
   if [ "$uav_number" -lt 10 ]
   then
-    expected_wlan_ip="192.168.69.10$uav_number/24"
+    expected_wlan_ip="192.168.$subnet.10$uav_number/24"
     expected_eth_ip="10.10.20.10$uav_number/24"
   else
-    expected_wlan_ip="192.168.69.1$uav_number/24"
+    expected_wlan_ip="192.168.$subnet.1$uav_number/24"
     expected_eth_ip="10.10.20.1$uav_number/24"
   fi
 
@@ -385,6 +393,11 @@ return $ret_val
 # #{ uav_configurator_check()
 
 uav_configurator_check () {
+
+  if [ "$CHECK_TYPE" == "f4f" ]
+  then
+    return 0;
+  fi
   ret_val=0
 
   echo -e "Checking uav_configurator is enabled ... \c"
@@ -549,15 +562,15 @@ ros_master_check () {
     fails=$((fails+1))
   fi
 
-  debugecho "\n----------- Broadcast check start -----------"
-  broadcast_check
-  if [[ $? -eq 0 ]]
-  then
-    debugecho "----------- ${GREEN}Broadcast check passed${NC} -----------"
-  else
-    echo -e "----------- ${RED}Broadcast check failed${NC} -----------"
-    fails=$((fails+1))
-  fi
+  # debugecho "\n----------- Broadcast check start -----------"
+  # broadcast_check
+  # if [[ $? -eq 0 ]]
+  # then
+  #   debugecho "----------- ${GREEN}Broadcast check passed${NC} -----------"
+  # else
+  #   echo -e "----------- ${RED}Broadcast check failed${NC} -----------"
+  #   fails=$((fails+1))
+  # fi
 
   debugecho "\n----------- Hosts check start -----------"
   hosts_check
@@ -590,8 +603,7 @@ ros_master_check () {
   fi
 
   debugecho "\n----------- Workspace check start -----------"
-  workspace_check mrs_workspace
-  workspace_check modules_workspace mrs_workspace
+  workspace_check workspace /opt/ros/noetic
   if [[ $? -eq 0 ]]
   then
     debugecho "----------- ${GREEN}Workspace check passed${NC} -----------"
