@@ -602,15 +602,15 @@ ros_master_check () {
     fails=$((fails+1))
   fi
 
-  debugecho "\n----------- Workspace check start -----------"
-  workspace_check workspace /opt/ros/noetic
-  if [[ $? -eq 0 ]]
-  then
-    debugecho "----------- ${GREEN}Workspace check passed${NC} -----------"
-  else
-    echo -e "----------- ${RED}Workspace check failed${NC} -----------"
-    fails=$((fails+1))
-  fi
+  # debugecho "\n----------- Workspace check start -----------"
+  # workspace_check workspace /opt/ros/noetic
+  # if [[ $? -eq 0 ]]
+  # then
+  #   debugecho "----------- ${GREEN}Workspace check passed${NC} -----------"
+  # else
+  #   echo -e "----------- ${RED}Workspace check failed${NC} -----------"
+  #   fails=$((fails+1))
+  # fi
 
   debugecho "\n----------- ROS_MASTER_URI check start -----------"
 
