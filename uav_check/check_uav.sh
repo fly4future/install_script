@@ -501,7 +501,7 @@ ros_master_check () {
 
   echo -e "Checking ROS_IP in .bashrc variable ... \c"
 
-  ip_bashrc=$( cat ~/.bashrc | grep 'ROS_IP' | grep -v '#' | wc -l )
+  ip_bashrc=$( cat ~/.bashrc | grep 'export ROS_IP' | grep -v '#' | wc -l )
   if [[ $ip_bashrc -eq 0 ]]
   then
     echo -e "${GREEN}correct${NC}"
