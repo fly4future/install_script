@@ -26,7 +26,7 @@ pre_input="export UAV_NAME="uav1""
 # * "new line" after the command    => the command will be called after start
 # * NO "new line" after the command => the command will wait for user's <enter>
 input=(
-  'Mavros' 'waitForRos; roslaunch mrs_uav_general mavros_uav.launch
+  'Mavros' 'waitForRos; roslaunch mrs_uav_px4_api mavros_realworld.launch
 '
   'Python' 'waitForRos; python3 helper_checker.py; sleep 1; tmux kill-session
 '
