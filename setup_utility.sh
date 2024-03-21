@@ -6,23 +6,61 @@ blink=$(tput blink)
 red='\033[0;31m'
 green='\033[0;32m'
 
+light=$(echo $PROFILES | grep COLORSCHEME_LIGHT)
+if [ -z "$light" ]
+then
+  export NEWT_COLORS='
+  root=brightgreen,black
+  border=brightgreen,black
+  title=brightgreen,black
+  roottext=white,black
+  window=brightgreen,black
+  textbox=white,black
+  button=black,brightgreen
+  compactbutton=white,black
+  listbox=white,black
+  actlistbox=black,white
+  actsellistbox=black,brightgreen
+  checkbox=brightgreen,black
+  actcheckbox=black,brightgreen
+  entry=black,brightgreen
+  '
+else
+  export NEWT_COLORS='
+  root=green,white
+  border=green,white
+  title=green,white
+  roottext=black,white
+  window=green,white
+  textbox=black,white
+  button=white,green
+  compactbutton=black,white
+  listbox=black,white
+  actlistbox=black,white
+  actsellistbox=white,green
+  checkbox=green,white
+  actcheckbox=white,green
+  entry=white,green
+  '
+fi
 
-export NEWT_COLORS='
-root=brightgreen,black
-border=brightgreen,black
-title=brightgreen,black
-roottext=white,black
-window=brightgreen,black
-textbox=white,black
-button=black,brightgreen
-compactbutton=white,black
-listbox=white,black
-actlistbox=black,white
-actsellistbox=black,brightgreen
-checkbox=brightgreen,black
-actcheckbox=black,brightgreen
-entry=black,brightgreen
-'
+
+# export NEWT_COLORS='
+# root=brightgreen,black
+# border=brightgreen,black
+# title=brightgreen,black
+# roottext=white,black
+# window=brightgreen,black
+# textbox=white,black
+# button=black,brightgreen
+# compactbutton=white,black
+# listbox=white,black
+# actlistbox=black,white
+# actsellistbox=black,brightgreen
+# checkbox=brightgreen,black
+# actcheckbox=black,brightgreen
+# entry=black,brightgreen
+# '
 # root=white,black
 # border=black,lightgray
 # window=lightgray,lightgray
