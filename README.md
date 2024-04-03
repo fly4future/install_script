@@ -1,6 +1,6 @@
 # Install-script
 
- - Run the script with "run.sh" in the root directory of the repository.
+ - Run the script with "setup_utility.sh" in the root directory of the repository.
  - The menu items will be automatically generated from the "subscripts"
    folder
  - Scripts and folders will appear in the menu as items or
