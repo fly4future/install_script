@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Path to the script to be executed
-SCRIPT_TO_RUN="/usr/bin/setup_ap.sh"
+SCRIPT_TO_RUN="/usr/local/bin/setup_ap.sh"
 
 # Log file to keep track of power button presses
 LOGFILE="/tmp/power_button_press.log"
 
 # Maximum time interval (in seconds) between presses to count as a triple press
-TIME_INTERVAL=5
+TIME_INTERVAL=7
 
 # Log the current time
 echo "$(date +%s)" >> $LOGFILE

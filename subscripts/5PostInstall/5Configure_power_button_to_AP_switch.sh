@@ -6,6 +6,7 @@ EVENTS_DIR="/etc/acpi/events"
 SCRIPT_NAME="power_button_handler.sh"
 EVENT_FILE="power_button"
 AP_FILE="setup_ap.sh"
+KILL_AP_FILE="kill_ap.sh"
 SRC_DIR="ap_utilities"  
 LOGIND_CONF="/etc/systemd/logind.conf"
 BIN_DIR="/usr/local/bin"
@@ -28,6 +29,12 @@ sudo cp "$SRC_DIR/$EVENT_FILE" "$EVENTS_DIR/"
 # Copy the setup_ap script to the bin directory
 echo "Copying $SRC_DIR/$AP_FILE to $BIN_DIR"
 sudo cp "$SRC_DIR/$AP_FILE" "$BIN_DIR/"
+sudo chmod +x "$BIN_DIR/$AP_FILE"
+
+# Copy the kill_ap script to the bin directory
+echo "Copying $SRC_DIR/$KILL_AP_FILE to $BIN_DIR"
+sudo cp "$SRC_DIR/$KILL_AP_FILE" "$BIN_DIR/"
+sudo chmod +x "$BIN_DIR/$KILL_AP_FILE"
 
 # Set the logind configuration to ignore power button and not poweroff 
 if grep -q "^#HandlePowerKey=" "$LOGIND_CONF"; then
