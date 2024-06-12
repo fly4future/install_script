@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Check if the ap0 interface is up
 if ip a show ap0 up > /dev/null 2>&1; then
     echo "Access point ap0 is already running."
@@ -13,11 +12,13 @@ SUDO_PASSWORD="f4f"
 # Define the netplan configuration files
 CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 BACKUP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.orig"
+HOME_BACKUP_NETPLAN_FILE="/home/uav/.01-netcfg.yaml.orig"
 AP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.ap"
 
 # Check if the current netplan file exists
 if [ -f "$CURRENT_NETPLAN_FILE" ]; then
     # Rename the current netplan configuration file
+    echo "$SUDO_PASSWORD" | sudo -S cp "$CURRENT_NETPLAN_FILE" "$HOME_BACKUP_NETPLAN_FILE"
     echo "$SUDO_PASSWORD" | sudo -S mv "$CURRENT_NETPLAN_FILE" "$BACKUP_NETPLAN_FILE"
 else
     echo "Current netplan configuration file not found: $CURRENT_NETPLAN_FILE. Continuing..."
@@ -45,8 +46,8 @@ echo "$SUDO_PASSWORD" | sudo -S mv "$AP_NETPLAN_FILE" "$CURRENT_NETPLAN_FILE"
 # Apply the new netplan configuration
 echo "$SUDO_PASSWORD" | sudo -S netplan apply
 
-# Source the .bashrc to load environment variables
-source /home/uav/.bashrc
+# Source the /etc/uav_name file
+source /etc/uav_name
 # Use UAV_NAME environment variable or default to "uav00"
 UAV_NAME="${UAV_NAME:-uav00}"
 
