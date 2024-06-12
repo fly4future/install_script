@@ -45,6 +45,8 @@ echo "$SUDO_PASSWORD" | sudo -S mv "$AP_NETPLAN_FILE" "$CURRENT_NETPLAN_FILE"
 # Apply the new netplan configuration
 echo "$SUDO_PASSWORD" | sudo -S netplan apply
 
+# Source the .bashrc to load environment variables
+source /home/uav/.bashrc
 # Use UAV_NAME environment variable or default to "uav00"
 UAV_NAME="${UAV_NAME:-uav00}"
 

@@ -48,6 +48,13 @@ else
   echo "HandlePowerKey=ignore" | sudo tee -a "$LOGIND_CONF"
 fi
 
+# Check if GNOME is running. If yes we need to disable the power button setting as it overrides the logind.conf file and crashes with restarting systemd-logind
+if pgrep -x "gnome-shell" > /dev/null; then
+  echo "GNOME is running. Applying GNOME-specific power settings."
+  gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'nothing'
+  pkill -HUP gnome-settings-daemon
+fi
+
 # Restart the systemd-logind service
 echo "Restarting systemd-logind service"
 sudo systemctl restart systemd-logind
