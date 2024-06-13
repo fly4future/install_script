@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Define your sudo password
+# Define your sudo password 
 SUDO_PASSWORD="f4f"
 
 # Define netplan configuration file paths
@@ -29,7 +29,7 @@ else
   echo "Current netplan configuration file not found. Skipping rename to .ap."
 fi
 
-# Rename the .orig netplan configuration file to the classical one
+# Rename the .orig netplan configuration file to the current one
 if [ -f "$ORIGINAL_NETPLAN_FILE" ]; then
   echo "Renaming .orig netplan configuration file to the classical one..."
   echo "$SUDO_PASSWORD" | sudo -S mv "$ORIGINAL_NETPLAN_FILE" "$CURRENT_NETPLAN_FILE"

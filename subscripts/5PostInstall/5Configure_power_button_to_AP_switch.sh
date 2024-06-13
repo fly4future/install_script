@@ -7,7 +7,7 @@ SCRIPT_NAME="power_button_handler.sh"
 EVENT_FILE="power_button"
 AP_FILE="setup_ap.sh"
 KILL_AP_FILE="kill_ap.sh"
-SRC_DIR="ap_utilities"  # Change this to the directory where your script and event file are located
+SRC_DIR="ap_utilities"  # Dir of the useful scripts for the AP 
 LOGIND_CONF="/etc/systemd/logind.conf"
 BIN_DIR="/usr/local/bin"
 UAV_NAME_FILE="/etc/uav_name"
@@ -18,7 +18,7 @@ source /home/uav/.bashrc
 # Get the UAV_NAME variable from the environment
 UAV_NAME_VALUE=$UAV_NAME
 
-# Create the /etc/uav_name file with the UAV_NAME value
+# Create the /etc/uav_name file with the UAV_NAME value in /etc cause so far the event script does not manage to retrieve env variables from .bashrc 
 if [ -n "$UAV_NAME_VALUE" ]; then
   echo "Creating $UAV_NAME_FILE with UAV_NAME=$UAV_NAME_VALUE"
   echo "UAV_NAME=$UAV_NAME_VALUE" | sudo tee "$UAV_NAME_FILE"
@@ -66,7 +66,7 @@ fi
 # Restart the acpid service
 sudo systemctl restart acpid
 
-# Check if GNOME is running
+# Check if GNOME is running and act accordingly (systemctl restart systemd-logind logs you out and disable keyboard and mouse when GNOME is running so dont do it)
 if pgrep -x "gnome-shell" > /dev/null; then
   echo "GNOME is running. Applying GNOME-specific power settings."
   gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'nothing'

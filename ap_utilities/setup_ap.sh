@@ -6,7 +6,7 @@ if ip a show ap0 up > /dev/null 2>&1; then
     exit 0
 fi
 
-# Define your sudo password
+# Define your sudo password (maybe use visudo instead ? To be discussed)
 SUDO_PASSWORD="f4f"
 
 # Define the netplan configuration files

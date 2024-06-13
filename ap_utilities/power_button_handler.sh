@@ -7,7 +7,7 @@ SCRIPT_TO_RUN="/usr/local/bin/setup_ap.sh"
 LOGFILE="/tmp/power_button_press.log"
 
 # Maximum time interval (in seconds) between presses to count as a triple press
-TIME_INTERVAL=7
+TIME_INTERVAL=8
 
 # Log the current time
 echo "$(date +%s)" >> $LOGFILE
@@ -16,7 +16,7 @@ echo "$(date +%s)" >> $LOGFILE
 awk -v interval=$TIME_INTERVAL -v now=$(date +%s) '$1 >= now - interval' $LOGFILE > ${LOGFILE}.tmp
 mv ${LOGFILE}.tmp $LOGFILE
 
-# Remove duplicate consecutive entries (within 1 second interval to handle multiple events per press)
+# Remove duplicate consecutive entries (within 1 second interval to handle multiple events per press) (TO BE IMPROVED)
 awk '!seen[$1]++' $LOGFILE > ${LOGFILE}.tmp
 mv ${LOGFILE}.tmp $LOGFILE
 
