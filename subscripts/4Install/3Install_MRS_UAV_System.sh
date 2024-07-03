@@ -5,8 +5,17 @@ OPTIONS=(
   2 "Use unstable ppa"
 )
 
+OPTIONS2=(
+  1 "Setup as a UAV"
+  2 "Setup as user's computer"
+)
+
+
 show_menu() {
   whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
+}
+show_menu2() {
+  whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS2[@]}" 3>&1 1>&2 2>&3
 }
 
 main() {
@@ -30,5 +39,24 @@ main() {
         esac
       }
 
+link_tmux() {
+  choice=$(show_menu2)
+
+        # Handle user choice
+        case $choice in
+          1)
+            echo "Setup as a UAV"
+            ln -s /etc/ctu-mrs/tmux.conf ~/.tmux.conf
+            ;;
+          2)
+            echo "Setup as user's computer"
+            ;;
+          *)
+            exit 1
+            ;;
+        esac
+      }
+
 main
+link_tmux
 exit 0
