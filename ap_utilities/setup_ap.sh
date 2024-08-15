@@ -52,4 +52,4 @@ source /etc/uav_name
 UAV_NAME="${UAV_NAME:-uav00}"
 
 # Create the access point using create_ap
-echo "$SUDO_PASSWORD" | sudo -S create_ap -n wlan0 "${UAV_NAME}_WIFI" password
+echo "$SUDO_PASSWORD" | sudo -S create_ap -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" password
