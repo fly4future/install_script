@@ -21,17 +21,6 @@ else
   echo "Access point stopped."
 fi
 
-# Find and kill the web server process
-WEB_SERVER_PID=$(pgrep -f 'python3 web_server.py')
-
-if [ -z "$WEB_SERVER_PID" ]; then
-  echo "No web server process found."
-else
-  echo "Killing web server process with PID: $WEB_SERVER_PID"
-  echo "$SUDO_PASSWORD" | sudo -S kill $WEB_SERVER_PID
-  echo "Web server stopped."
-fi
-
 # Rename the current netplan configuration file to .ap
 if [ -f "$CURRENT_NETPLAN_FILE" ]; then
   echo "Renaming current netplan configuration file to .ap..."
