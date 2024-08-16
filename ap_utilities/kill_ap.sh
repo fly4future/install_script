@@ -8,8 +8,8 @@ CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 AP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.ap"
 ORIGINAL_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.orig"
 
-# Find the PID of the create_ap process
-AP_PID=$(ps aux | grep 'create_ap -n wlan0' | grep -v grep | awk '{print $2}')
+# Find the PID of the create_ap process matching the full command used in setup_ap.sh
+AP_PID=$(pgrep -f 'create_ap -n --redirect-to-localhost wlan0')
 
 # Check if the process is running
 if [ -z "$AP_PID" ]; then
@@ -19,6 +19,17 @@ else
   echo "Killing create_ap process with PID: $AP_PID"
   echo "$SUDO_PASSWORD" | sudo -S kill $AP_PID
   echo "Access point stopped."
+fi
+
+# Find and kill the web server process
+WEB_SERVER_PID=$(pgrep -f 'python3 web_server.py')
+
+if [ -z "$WEB_SERVER_PID" ]; then
+  echo "No web server process found."
+else
+  echo "Killing web server process with PID: $WEB_SERVER_PID"
+  echo "$SUDO_PASSWORD" | sudo -S kill $WEB_SERVER_PID
+  echo "Web server stopped."
 fi
 
 # Rename the current netplan configuration file to .ap

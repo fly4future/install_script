@@ -52,4 +52,15 @@ source /etc/uav_name
 UAV_NAME="${UAV_NAME:-uav00}"
 
 # Create the access point using create_ap
-echo "$SUDO_PASSWORD" | sudo -S create_ap -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" password
+echo "$SUDO_PASSWORD" | sudo -S create_ap -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" password &
+
+# Check if the web server repository exists
+WEB_SERVER_DIR=~/git/web_server_mavros_diagnostic/
+
+if [ -d "$WEB_SERVER_DIR" ]; then
+    # Start the Python web server if the directory exists
+    cd "$WEB_SERVER_DIR"
+    echo "$SUDO_PASSWORD" | sudo -S python3 web_server.py &
+else
+    echo "Web server directory not found: $WEB_SERVER_DIR. Skipping web server start."
+fi
