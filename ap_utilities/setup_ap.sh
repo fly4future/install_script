@@ -13,24 +13,20 @@ SUDO_PASSWORD="f4f"
 CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 BACKUP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.orig"
 HOME_BACKUP_NETPLAN_FILE="/home/uav/.01-netcfg.yaml.orig"
-AP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.ap"
 
 # Check if the current netplan file exists
 if [ -f "$CURRENT_NETPLAN_FILE" ]; then
-    # Rename the current netplan configuration file
+    # Backup the current netplan configuration fileNo worries
     echo "$SUDO_PASSWORD" | sudo -S cp "$CURRENT_NETPLAN_FILE" "$HOME_BACKUP_NETPLAN_FILE"
     echo "$SUDO_PASSWORD" | sudo -S mv "$CURRENT_NETPLAN_FILE" "$BACKUP_NETPLAN_FILE"
 else
-    echo "Current netplan configuration file not found: $CURRENT_NETPLAN_FILE. Continuing..."
+    echo "Current netplan configuration file not found: $CURRENT_NETPLAN_FILE. Skipping backup..."
 fi
 
-# Check if the AP netplan configuration file exists
-if [ ! -f "$AP_NETPLAN_FILE" ]; then
-    # Create the AP netplan configuration file
-    echo "AP netplan configuration file not found: $AP_NETPLAN_FILE"
-    echo "Creating AP netplan configuration file..."
+# Create the AP netplan configuration directly in the current netplan file
+echo "Creating AP netplan configuration..."
 
-    echo "$SUDO_PASSWORD" | sudo -S tee "$AP_NETPLAN_FILE" > /dev/null <<EOL
+echo "$SUDO_PASSWORD" | sudo -S tee "$CURRENT_NETPLAN_FILE" > /dev/null <<EOL
 network:
   version: 2
   renderer: networkd
@@ -38,18 +34,17 @@ network:
     eth0:
       dhcp4: yes
 EOL
-fi
-
-# Rename the AP netplan configuration file to the current one
-echo "$SUDO_PASSWORD" | sudo -S mv "$AP_NETPLAN_FILE" "$CURRENT_NETPLAN_FILE"
 
 # Apply the new netplan configuration
+echo "Applying new netplan configuration..."
 echo "$SUDO_PASSWORD" | sudo -S netplan apply
 
 # Source the /etc/uav_name file
 source /etc/uav_name
+
 # Use UAV_NAME environment variable or default to "uav00"
 UAV_NAME="${UAV_NAME:-uav00}"
 
 # Create the access point using create_ap
-echo "$SUDO_PASSWORD" | sudo -S create_ap -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" password
+AP_PASSWORD="${UAV_NAME}@F4F2024"
+echo "$SUDO_PASSWORD" | sudo -S create_ap -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"

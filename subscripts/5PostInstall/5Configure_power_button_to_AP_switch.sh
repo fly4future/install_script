@@ -7,6 +7,7 @@ SCRIPT_NAME="power_button_handler.sh"
 EVENT_FILE="power_button"
 AP_FILE="setup_ap.sh"
 KILL_AP_FILE="kill_ap.sh"
+CONF_NETPLAN_AP_DOWN_FILE="configure_netplan_and_kill_ap.sh"
 SRC_DIR="ap_utilities"  # Dir of the useful scripts for the AP 
 LOGIND_CONF="/etc/systemd/logind.conf"
 BIN_DIR="/usr/local/bin"
@@ -50,6 +51,11 @@ sudo chmod +x "$BIN_DIR/$AP_FILE"
 echo "Copying $SRC_DIR/$KILL_AP_FILE to $BIN_DIR"
 sudo cp "$SRC_DIR/$KILL_AP_FILE" "$BIN_DIR/"
 sudo chmod +x "$BIN_DIR/$KILL_AP_FILE"
+
+# Copy the configure_netplan_and_kill_ap script to the bin directory
+echo "Copying $SRC_DIR/$CONF_NETPLAN_AP_DOWN_FILE to $BIN_DIR"
+sudo cp "$SRC_DIR/$CONF_NETPLAN_AP_DOWN_FILE" "$BIN_DIR/"
+sudo chmod +x "$BIN_DIR/$CONF_NETPLAN_AP_DOWN_FILE"
 
 # Set the logind configuration to ignore power button and not power off 
 if grep -q "^#HandlePowerKey=" "$LOGIND_CONF"; then
