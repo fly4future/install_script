@@ -102,4 +102,5 @@ add_var_to_bashrc "INITIAL_DISTURBANCE_Y" "0.0" "Initial Y disturbance in Newton
 add_var_to_bashrc_quotes "SENSORS" "pixhawk, garmin_down" "What sensors are equipped on this UAV?\n values: pixhawk, garmin_down, ouster, ..."
 add_var_to_bashrc "PIXGARM" "true" "Should we look for Garmin data routed through Pixhawk?\n values: true, false"
 add_var_to_bashrc "OLD_PX4_FW" "false" "Are we running an old (1.12) Pixhawk FW? (Applies to Pixhawk 4 used in MRS)\n values: true, false"
+add_var_to_bashrc "ROS_MASTER_URI" "http://localhost:11311" "Address of the ROS master. Do not modify on UAVs"
 exit 1

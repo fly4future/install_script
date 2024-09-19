@@ -286,10 +286,12 @@ swap_check () {
   ram=$(grep MemTotal /proc/meminfo)
   ram="${ram//[!0-9]/}"  #strip all non-numeric chars from hostname, should leave us just with the number of the uav. E.G. -> uav31 -> 31
 
-  total_mem=$(echo "scale=2; (($ram + $swap) / 1048576)" | bc -l)
-  req_mem=$(echo "scale=2; $num_threads * 2.5" | bc -l)
+  # total_mem=$(echo "scale=2; (($ram + $swap) / 1048576)" | bc -l)
+  # req_mem=$(echo "scale=2; $num_threads * 2.5" | bc -l)
+  total_mem=$(echo "scale=2; ((($swap) / 1048576))" | bc -l) #just check if swap is 16GB
+  req_mem=15.9 #this is easier
 
-  debugecho "Total swap + RAM size: $total_mem GB"
+  debugecho "Total swap size: $total_mem GB"
   debugecho "Recommended size: $req_mem GB ... \c"
 
   if (( $(echo "$total_mem > $req_mem" |bc -l) ))
