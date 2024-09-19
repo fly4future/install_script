@@ -27,7 +27,6 @@ print(BOLD + "This script can run for up to a minute, do not interrupt it" + END
 rospy.init_node('pixhawk_tester')
 
 state_hz = rostopic.ROSTopicHz(-1)
-rospy.sleep(1)
 s = rospy.Subscriber('/uav1/mavros/state', rospy.AnyMsg, state_hz.callback_hz, callback_args='/state')
 rospy.sleep(1)
 output_hz = state_hz.get_hz('/state')
@@ -70,5 +69,23 @@ for i in data:
     else:
         print_dual(RED + BOLD + "Failed to check parameter " + i + END + BOLD + " " + data[i]['error_message'] + END)
       
+TOPIC = '/uav1/mavros/distance_sensor/garmin'  
+
+print_dual("")
+print_dual(BOLD + "Now checking for Garmin lidar rate: " + END)
+h = rostopic.ROSTopicHz(-1)  
+s1 = rospy.Subscriber(TOPIC, rospy.AnyMsg, h.callback_hz, callback_args=TOPIC)  
+rospy.sleep(1)  
+test = h.get_hz(TOPIC)
+if test is None:
+    garmin_hz = 0.0
+else:
+    garmin_hz = test[0]
+
+if garmin_hz > 30:
+    print_dual("Garmin rate: " + str(round(garmin_hz, 1)) + " " + GREEN + "PASS" + END)
+else:
+    print_dual("Garmin rate: " + str(round(garmin_hz, 1)) + " " + RED + "FAIL" + END)
+    print_dual(RED + "Did not detect data from Garmin lidar at a sufficient rate" + END)
 
 print_dual("-----------------Check Finished-----------------------")
