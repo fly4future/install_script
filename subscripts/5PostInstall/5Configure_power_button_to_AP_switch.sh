@@ -8,37 +8,24 @@ EVENT_FILE="power_button"
 AP_FILE="setup_ap.sh"
 KILL_AP_FILE="kill_ap.sh"
 CONF_NETPLAN_AP_DOWN_FILE="configure_netplan_and_kill_ap.sh"
-SRC_DIR="ap_utilities"  # Dir of the useful scripts for the AP 
+SERVICE_FILE="ap_startup.service"
+SRC_DIR="ap_utilities"  # Directory of the useful scripts for the AP
 LOGIND_CONF="/etc/systemd/logind.conf"
 BIN_DIR="/usr/local/bin"
-UAV_NAME_FILE="/etc/uav_name"
+SERVICE_DIR="/etc/systemd/system"
 
-# Source the user's .bashrc to inherit environment variables
-source /home/uav/.bashrc
-
-# Get the UAV_NAME variable from the environment
-UAV_NAME_VALUE=$UAV_NAME
-
-# Create the /etc/uav_name file with the UAV_NAME value in /etc cause so far the event script does not manage to retrieve env variables from .bashrc 
-if [ -n "$UAV_NAME_VALUE" ]; then
-  echo "Creating $UAV_NAME_FILE with UAV_NAME=$UAV_NAME_VALUE"
-  echo "UAV_NAME=$UAV_NAME_VALUE" | sudo tee "$UAV_NAME_FILE"
-else
-  echo "UAV_NAME is not set in the environment. Please check your .bashrc."
-fi
-
-# Ensure the acpi events directory exists
+# Ensure the ACPI events directory exists
 if [ ! -d "$EVENTS_DIR" ]; then
   echo "Creating directory $EVENTS_DIR"
   sudo mkdir -p "$EVENTS_DIR"
 fi
 
-# Copy the power button script to the acpi directory
+# Copy the power button script to the ACPI directory
 echo "Copying $SRC_DIR/$SCRIPT_NAME to $ACPI_DIR"
 sudo cp "$SRC_DIR/$SCRIPT_NAME" "$ACPI_DIR/"
 sudo chmod +x "$ACPI_DIR/$SCRIPT_NAME"
 
-# Copy the event configuration file to the acpi events directory
+# Copy the event configuration file to the ACPI events directory
 echo "Copying $SRC_DIR/$EVENT_FILE to $EVENTS_DIR"
 sudo cp "$SRC_DIR/$EVENT_FILE" "$EVENTS_DIR/"
 
@@ -57,7 +44,20 @@ echo "Copying $SRC_DIR/$CONF_NETPLAN_AP_DOWN_FILE to $BIN_DIR"
 sudo cp "$SRC_DIR/$CONF_NETPLAN_AP_DOWN_FILE" "$BIN_DIR/"
 sudo chmod +x "$BIN_DIR/$CONF_NETPLAN_AP_DOWN_FILE"
 
-# Set the logind configuration to ignore power button and not power off 
+# Copy the systemd service file to the system directory
+echo "Copying $SRC_DIR/$SERVICE_FILE to $SERVICE_DIR"
+sudo cp "$SRC_DIR/$SERVICE_FILE" "$SERVICE_DIR/"
+sudo chmod 644 "$SERVICE_DIR/$SERVICE_FILE"
+
+# Reload systemd daemon to recognize the new service
+echo "Reloading systemd daemon..."
+sudo systemctl daemon-reload
+
+# Enable the systemd service to ensure it runs on boot
+echo "Enabling AP startup service..."
+sudo systemctl enable "$SERVICE_FILE"
+
+# Set the logind configuration to ignore power button and not power off
 if grep -q "^#HandlePowerKey=" "$LOGIND_CONF"; then
   echo "Uncommenting and updating HandlePowerKey setting in $LOGIND_CONF"
   sudo sed -i 's/^#HandlePowerKey=.*/HandlePowerKey=ignore/' "$LOGIND_CONF"
@@ -70,9 +70,11 @@ else
 fi
 
 # Restart the acpid service
+echo "Restarting acpid service..."
 sudo systemctl restart acpid
 
-# Check if GNOME is running and act accordingly (systemctl restart systemd-logind logs you out and disable keyboard and mouse when GNOME is running so dont do it)
+# Check if GNOME is running and act accordingly
+# (systemctl restart systemd-logind logs you out and disables keyboard and mouse when GNOME is running, so avoid it)
 if pgrep -x "gnome-shell" > /dev/null; then
   echo "GNOME is running. Applying GNOME-specific power settings."
   gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'nothing'
