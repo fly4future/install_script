@@ -8,8 +8,10 @@ TARGET_DIR="/tmp/linux-wifi-hotspot"
 sudo apt-get update
 sudo apt-get install -y libgtk-3-dev build-essential gcc g++ pkg-config make hostapd libqrencode-dev libpng-dev haveged python3-pip
 
-# Install yq using pip
-sudo pip3 install yq
+# Install yq
+echo "Installing yq for YAML editing..."
+sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.8/yq_linux_arm -O /usr/local/bin/yq
+sudo chmod +x /usr/local/bin/yq
 
 # Install haveged to avoid low entropy issues (will be started only when needed)
 if ! systemctl is-active --quiet haveged; then
