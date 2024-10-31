@@ -6,8 +6,27 @@ CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 BACKUP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.bak"
 SERVICE_NAME="ap_startup.service"
 
-# Define default AP settings
-FREQUENCY_BAND="5"  # Use the 5GHz band if supported
+# Detect available frequency band
+echo "Detecting available frequency bands for your wireless adapter..."
+
+# Use iw list to detect frequency capabilities
+if iw list | grep -q 'Band 2'; then
+  echo "5GHz band (Band 2) is available. Setting up AP on 5GHz frequency."
+  FREQUENCY_BAND="5"
+elif iw list | grep -q 'Band 1'; then
+  echo "5GHz not supported. Falling back to 2.4GHz (Band 1)."
+  FREQUENCY_BAND="2.4"
+else
+  echo "No supported frequency bands found. Exiting."
+  exit 1
+fi
+
+# Ensure the adapter supports AP mode
+if ! iw list | grep -q "AP"; then
+  echo "The wireless adapter does not support Access Point (AP) mode. Exiting."
+  exit 1
+fi
+
 
 # Check if this script is being triggered on boot or by the user
 if [ "$1" == "boot" ]; then

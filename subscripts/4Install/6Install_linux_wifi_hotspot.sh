@@ -10,7 +10,7 @@ sudo apt-get install -y libgtk-3-dev build-essential gcc g++ pkg-config make hos
 
 # Install yq
 echo "Installing yq for YAML editing..."
-sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.8/yq_linux_arm -O /usr/local/bin/yq
+sudo wget https://github.com/mikefarah/yq/releases/download/v4.30.8/yq_linux_amd64 -O /usr/local/bin/yq
 sudo chmod +x /usr/local/bin/yq
 
 # Install haveged to avoid low entropy issues (will be started only when needed)
