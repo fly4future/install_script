@@ -3,9 +3,10 @@ Description=Start Access Point on Boot if Required
 After=network.target
 
 [Service]
-Type=oneshot
+Type=simple
 ExecStart=/usr/local/bin/setup_ap.sh boot
-RemainAfterExit=true
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

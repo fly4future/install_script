@@ -75,11 +75,11 @@ sudo systemctl restart acpid
 
 # Check if GNOME is running and act accordingly
 # (systemctl restart systemd-logind logs you out and disables keyboard and mouse when GNOME is running, so avoid it)
-if pgrep -x "gnome-shell" > /dev/null; then
-  echo "GNOME is running. Applying GNOME-specific power settings."
+if [ -n "$DESKTOP_SESSION" ]; then
+  echo "A graphical session is running."
   gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'nothing'
   pkill -HUP gnome-settings-daemon
-  echo "Logging out from the current GNOME session."
+  echo "Logging out from the current graphical session."
   gnome-session-quit --logout --no-prompt
 else
   echo "GNOME is not running. Restarting systemd-logind."
