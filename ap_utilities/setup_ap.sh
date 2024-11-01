@@ -13,7 +13,7 @@ FREQUENCY_BAND=""
 CHANNEL=""
 
 # Extract available 5GHz channels without "no IR" and without "radar detection"
-iw list | awk '/Band 2:/,/Band [^2]/' | grep -E "^\s*\*.*MHz" | grep -v "no IR" | grep -v "radar detection" > /tmp/available_5ghz_channels.txt
+iw list | awk '/Band 2:/,/Band [^2]/' | grep -E "^\s*\*.*MHz" | grep -v "no IR" | grep -v "radar detection" | grep -v "disabled" > /tmp/available_5ghz_channels.txt
 
 if [ -s /tmp/available_5ghz_channels.txt ]; then
     # If there are available 5GHz channels, pick the first one
