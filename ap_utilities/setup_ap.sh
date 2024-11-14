@@ -53,7 +53,7 @@ if [ "$1" == "boot" ]; then
         echo "AP was previously enabled. Starting AP on boot..."
         # Start the access point using create_ap
         echo "Starting Access Point..."
-        sudo create_ap --no-virt -n -c "$CHANNEL" --freq-band "$FREQUENCY_BAND" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
+        sudo create_ap --no-virt -n --freq-band "2.4" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
     else
         # Restore the original netplan configuration if AP was not enabled
         if [ -f "$BACKUP_NETPLAN_FILE" ]; then
@@ -125,10 +125,6 @@ sudo touch "$AP_FLAG_FILE"
 echo "Enabling AP startup service for future boots..."
 sudo systemctl enable "$SERVICE_NAME"
 
-# Start the AP service to ensure it's running in the current session
-echo "Starting AP startup service..."
-sudo systemctl start "$SERVICE_NAME"
-
 # Start the access point using create_ap
 echo "Starting Access Point..."
-sudo create_ap --no-virt -n -c "$CHANNEL" --freq-band "$FREQUENCY_BAND" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
+sudo create_ap --no-virt -n --freq-band "2.4" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" #freq-band "5" not working on all computers so setting it to 2.4
