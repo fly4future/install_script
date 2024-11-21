@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Constants
-AP_FLAG_FILE="/var/run/ap_enabled"
+AP_FLAG_FILE="/etc/ap_enabled"
 SERVICE_NAME="ap_startup.service"
 CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 BACKUP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.bak"

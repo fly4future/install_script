@@ -5,8 +5,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/setup_ap.sh boot
-Restart=on-failure
-RestartSec=5
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
