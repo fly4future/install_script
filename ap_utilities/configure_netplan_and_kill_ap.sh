@@ -112,9 +112,9 @@ if [ $? -eq 0 ]; then
   fi
 
   # Check if any create_ap process is already running and stop it
-  if [ -n "$(create_ap --list-running)" ]; then
+  if [ -n "$(sudo create_ap --list-running)" ]; then
     echo "Stopping the running Access Point..."
-    create_ap --stop wlan0
+    sudo create_ap --stop wlan0
     if [ $? -ne 0 ]; then
       error_msg "Error: Failed to stop the Access Point. Exiting..."
       exit 1

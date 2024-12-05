@@ -12,7 +12,7 @@ if systemctl is-active --quiet NetworkManager; then
 fi
 
 # Check if any create_ap process is already running
-if [ -n "$(create_ap --list-running)" ]; then
+if [ -n "$(sudo create_ap --list-running)" ]; then
     echo "Access Point is already running. Exiting..."
     exit 0
 fi

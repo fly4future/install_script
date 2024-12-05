@@ -1,11 +1,10 @@
 [Unit]
 Description=Start Access Point on Boot if Required
-After=network.target
+After=network.target network-online.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/setup_ap.sh boot
-RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
