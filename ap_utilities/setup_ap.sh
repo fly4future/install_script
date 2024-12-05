@@ -1,10 +1,34 @@
 #!/bin/bash
 
 # Define constants and paths
-AP_FLAG_FILE="/var/run/ap_enabled"
 CURRENT_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml"
 BACKUP_NETPLAN_FILE="/etc/netplan/01-netcfg.yaml.bak"
 SERVICE_NAME="ap_startup.service"
+
+# Check if Network Manager is running
+if systemctl is-active --quiet NetworkManager; then
+    echo "NetworkManager is running. Please stop NetworkManager and use Netplan instead."
+    exit 1
+fi
+
+# Check if any create_ap process is already running
+if [ -n "$(create_ap --list-running)" ]; then
+    echo "Access Point is already running. Exiting..."
+    exit 0
+fi
+
+if ! systemctl is-enabled --quiet "$SERVICE_NAME"; then
+    echo "AP service is not enabled. Enabling it..."
+    sudo systemctl enable "$SERVICE_NAME"
+else
+    echo "AP service is already enabled."
+fi
+
+# Start haveged service to avoid low entropy issues
+if ! systemctl is-active --quiet haveged; then
+    echo "Starting haveged service to avoid low entropy issues..."
+    sudo systemctl start haveged
+fi
 
 # Detect available frequency band and suitable channel
 echo "Detecting available frequency bands and suitable channels..."
@@ -12,7 +36,7 @@ echo "Detecting available frequency bands and suitable channels..."
 FREQUENCY_BAND=""
 CHANNEL=""
 
-# Extract available 5GHz channels without "no IR" and without "radar detection"
+# Extract available 5GHz channels without "no IR", "radar detection", or "disabled"
 iw list | awk '/Band 2:/,/Band [^2]/' | grep -E "^\s*\*.*MHz" | grep -v "no IR" | grep -v "radar detection" | grep -v "disabled" > /tmp/available_5ghz_channels.txt
 
 if [ -s /tmp/available_5ghz_channels.txt ]; then
@@ -43,47 +67,41 @@ if [ -z "$UAV_NAME" ]; then
 fi
 
 # Define the AP password
-AP_PASSWORD="${UAV_NAME}@F4F2024"
+AP_PASSWORD="${UAV_NAME}f4f"
 
 # Check if this script is being triggered on boot or by the user
 if [ "$1" == "boot" ]; then
-    echo "System boot detected. Managing AP state..."
+    echo "System boot detected. Starting Access Point..."
 
-    if [ -f "$AP_FLAG_FILE" ]; then
-        echo "AP was previously enabled. Starting AP on boot..."
-        # Start the access point using create_ap
-        echo "Starting Access Point..."
-        sudo create_ap --no-virt -n --freq-band "2.4" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
-    else
-        # Restore the original netplan configuration if AP was not enabled
-        if [ -f "$BACKUP_NETPLAN_FILE" ]; then
-            echo "Restoring original netplan configuration..."
-            if ! sudo cp "$BACKUP_NETPLAN_FILE" "$CURRENT_NETPLAN_FILE"; then
-                echo "Error: Failed to restore netplan configuration."
-                exit 1
-            fi
-            sudo netplan apply
+    # Start the access point with a retry mechanism
+    echo "Starting Access Point with 5GHz channel first..."
+    sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
+
+    # Check if create_ap failed
+    if [ $? -ne 0 ]; then
+        echo "Failed to start Access Point on 5GHz channel. Falling back to 2.4GHz..."
+
+        # Fallback to 2.4GHz
+        FREQUENCY_BAND="2.4"
+        CHANNEL="1"  # Default to channel 1 for 2.4GHz
+
+        # Retry to start the access point using 2.4GHz band
+        sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
+
+        # Check if the fallback also fails
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to start Access Point with 2.4GHz fallback as well. Exiting..."
+            exit 1
         else
-            echo "Backup netplan configuration not found. Cannot restore network settings."
+            echo "Successfully started Access Point on 2.4GHz channel."
         fi
+    else
+        echo "Successfully started Access Point on 5GHz channel."
     fi
-
     exit 0
 fi
 
-# Normal scenario: User triggers AP setup (e.g., via power button)
-
-# Check if the ap0 interface is already up
-if ip a show ap0 up > /dev/null 2>&1; then
-    echo "Access point ap0 is already running."
-    exit 0
-fi
-
-# Start haveged service to avoid low entropy issues
-if ! systemctl is-active --quiet haveged; then
-    echo "Starting haveged service to avoid low entropy issues..."
-    sudo systemctl start haveged
-fi
+# Normal scenario: User triggers AP setup (e.g., via power button, via directly calling setup_ap.sh)
 
 # Backup netplan configuration if not already backed up
 if [ ! -f "$BACKUP_NETPLAN_FILE" ]; then
@@ -117,14 +135,28 @@ if ! sudo netplan apply; then
     exit 1
 fi
 
-# Create the flag file to indicate AP is enabled
-echo "Creating AP enabled flag file..."
-sudo touch "$AP_FLAG_FILE"
+# Start the access point with a retry mechanism
+echo "Starting Access Point with 5GHz channel first..."
+sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
 
-# Enable and start the AP service to ensure it runs on boot in the future
-echo "Enabling AP startup service for future boots..."
-sudo systemctl enable "$SERVICE_NAME"
+# Check if create_ap failed
+if [ $? -ne 0 ]; then
+    echo "Failed to start Access Point on 5GHz channel. Falling back to 2.4GHz..."
 
-# Start the access point using create_ap
-echo "Starting Access Point..."
-sudo create_ap --no-virt -n --freq-band "2.4" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" #freq-band "5" not working on all computers so setting it to 2.4
+    # Fallback to 2.4GHz
+    FREQUENCY_BAND="2.4"
+    CHANNEL="1"  # Default to channel 1 for 2.4GHz
+
+    # Retry to start the access point using 2.4GHz band
+    sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+
+    # Check if the fallback also fails
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to start Access Point with 2.4GHz fallback as well. Exiting..."
+        exit 1
+    else
+        echo "Successfully started Access Point on 2.4GHz channel."
+    fi
+else
+    echo "Successfully started Access Point on 5GHz channel."
+fi
