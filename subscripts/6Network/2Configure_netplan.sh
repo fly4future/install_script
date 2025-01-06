@@ -121,15 +121,31 @@ else
       echo "      dhcp4: no" >> /tmp/01-netcfg.yaml
       echo "      dhcp6: no" >> /tmp/01-netcfg.yaml
 
-      address=$(input_box "Enter your static IP address:" "192.168.69.101")
+      address=""
+      if [ $1 = "f4f" ]; then
+        address=$(input_box "Enter your static IP address:" "192.168.11.101")
+      else 
+        address=$(input_box "Enter your static IP address:" "192.168.69.101")
+      fi
       echo "      addresses: [$address/24]" >> /tmp/01-netcfg.yaml
 
-      gateway=$(input_box "Enter your gateway address:" "192.168.69.1")
+      gateway=""
+      if [ $1 = "f4f" ]; then
+        gateway=$(input_box "Enter your gateway address:" "192.168.11.1")
+      else 
+        gateway=$(input_box "Enter your gateway address:" "192.168.69.1")
+      fi
       echo "      gateway4: $gateway" >> /tmp/01-netcfg.yaml
 
     fi
 
-    ap_name=$(input_box "Enter your access point name:" "mrs_ctu")
+    ap_name=""
+    if [ $1 = "f4f" ]; then
+      ap_name=$(input_box "Enter your access point name:" "f4f")
+    else 
+      ap_name=$(input_box "Enter your access point name:" "mrs_ctu")
+    fi
+
     echo "      access-points:" >> /tmp/01-netcfg.yaml
     echo "        \"$ap_name\":" >> /tmp/01-netcfg.yaml
 
