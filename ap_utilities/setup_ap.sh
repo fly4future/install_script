@@ -67,7 +67,7 @@ if [ -z "$UAV_NAME" ]; then
 fi
 
 # Define the AP password
-AP_PASSWORD="${UAV_NAME}f4f"
+AP_PASSWORD="${UAV_NAME}@f4f"
 
 # Check if this script is being triggered on boot or by the user
 if [ "$1" == "boot" ]; then
@@ -141,18 +141,21 @@ sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redire
 
 # Check if create_ap failed
 if [ $? -ne 0 ]; then
-    echo "Failed to start Access Point on 5GHz channel. Falling back to 2.4GHz..."
+    echo "Failed to start Access Point on 5GHz channel. Cleaning up and falling back to 2.4GHz..."
+    
+    # Stop any lingering processes
+    if [ -n "$(sudo create_ap --list-running)" ]; then
+        echo "Stopping any running Access Point..."
+        sudo create_ap --stop wlan0
+    fi
 
-    # Fallback to 2.4GHz
-    FREQUENCY_BAND="2.4"
-    CHANNEL="1"  # Default to channel 1 for 2.4GHz
+    echo "Retrying with 2.4GHz channel..."
 
     # Retry to start the access point using 2.4GHz band
-    sudo create_ap --no-virt -n --freq-band "$FREQUENCY_BAND" -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+    sudo create_ap --no-virt -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
 
-    # Check if the fallback also fails
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to start Access Point with 2.4GHz fallback as well. Exiting..."
+        echo "Error: Failed to start Access Point with 2.4GHz fallback. Exiting..."
         exit 1
     else
         echo "Successfully started Access Point on 2.4GHz channel."
