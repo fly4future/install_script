@@ -98,7 +98,7 @@ AP_PASSWORD="${UAV_NAME}@f4f"
 # 8. Start create_ap (non-virtual, bridging not used, etc.)
 echo "Starting Access Point on $FREQUENCY_BAND GHz channel: $CHANNEL"
 sudo create_ap --no-virt -n -c "$CHANNEL" --redirect-to-localhost \
-     wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+     wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
 
 # Give it a few seconds to come up
 sleep 5
@@ -111,7 +111,7 @@ if ! sudo create_ap --list-running | grep -q "wlan0"; then
         sudo create_ap --stop wlan0 2>/dev/null
 
         sudo create_ap --no-virt -n --redirect-to-localhost \
-             wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+             wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD"
         sleep 5
 
         if ! sudo create_ap --list-running | grep -q "wlan0"; then
