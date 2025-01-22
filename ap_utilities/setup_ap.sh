@@ -68,16 +68,16 @@ if [ "$1" == "boot" ]; then
     echo "System boot detected. Starting Access Point..."
 
     echo "Starting Access Point with 5GHz channel first..."
-    sudo create_ap --no-virt -n -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+    sudo create_ap --no-virt -n -c "$CHANNEL" --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" 
 
-    sleep 5
+    sleep 3
     if ! sudo create_ap --list-running | grep -q "wlan0"; then
         echo "Failed to start Access Point on 5GHz channel. Cleaning up and retrying on 2.4GHz..."
         sudo create_ap --stop wlan0
 
-        sudo create_ap --no-virt -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" --daemon
+        sudo create_ap --no-virt -n --redirect-to-localhost wlan0 "${UAV_NAME}_WIFI" "$AP_PASSWORD" 
 
-        sleep 5
+        sleep 3
         if ! sudo create_ap --list-running | grep -q "wlan0"; then
             echo "Error: Failed to start Access Point on 2.4GHz fallback. Exiting..."
             exit 1
