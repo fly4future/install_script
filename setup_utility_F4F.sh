@@ -166,7 +166,11 @@ if [ "$first_run" = true ] ; then
   wget -q --spider http://google.com
 
   if [ $? -eq 0 ]; then
-    echo -e "${green}Online${normal}"
+   echo -e "${green}Online${normal}"
+   if ! git diff --quiet || ! git diff --cached --quiet; then
+        echo "Error: Local changes detected. Commit or stash your changes before pulling."
+        exit 1
+    fi
     git pull
     sudo apt update
   else
