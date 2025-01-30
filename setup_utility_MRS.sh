@@ -171,8 +171,9 @@ if [ "$first_run" = true ] ; then
         echo "Error: Local changes detected. Commit or stash your changes before pulling."
         exit 1
     fi
-    git pull
+    sudo apt install git
     sudo apt update
+    git pull
   else
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"
     echo -e "${red}${bold}You will not be to install/update any new software!${normal}"
