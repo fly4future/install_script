@@ -167,9 +167,9 @@ if [ "$first_run" = true ] ; then
 
   if [ $? -eq 0 ]; then
    echo -e "${green}Online${normal}"
-   if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo "Error: Local changes detected. Commit or stash your changes before pulling."
-        exit 1
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      echo "Error: Local changes detected. Commit or stash your changes before pulling."
+      exit 1
     fi
     sudo apt update
     sudo apt install git

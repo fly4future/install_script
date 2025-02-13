@@ -123,7 +123,7 @@ else
 
       address=""
       if [ $1 = "f4f" ]; then
-        address=$(input_box "Enter your static IP address:" "192.168.11.101")
+        address=$(input_box "Enter your static IP address:" "192.168.12.101")
       else 
         address=$(input_box "Enter your static IP address:" "192.168.69.101")
       fi
@@ -131,7 +131,7 @@ else
 
       gateway=""
       if [ $1 = "f4f" ]; then
-        gateway=$(input_box "Enter your gateway address:" "192.168.11.1")
+        gateway=$(input_box "Enter your gateway address:" "192.168.12.1")
       else 
         gateway=$(input_box "Enter your gateway address:" "192.168.69.1")
       fi
@@ -141,7 +141,7 @@ else
 
     ap_name=""
     if [ $1 = "f4f" ]; then
-      ap_name=$(input_box "Enter your access point name:" "f4f")
+      ap_name=$(input_box "Enter your access point name:" "f4f_robot")
     else 
       ap_name=$(input_box "Enter your access point name:" "mrs_ctu")
     fi
