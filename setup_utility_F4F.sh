@@ -166,13 +166,13 @@ if [ "$first_run" = true ] ; then
   wget -q --spider http://google.com
 
   if [ $? -eq 0 ]; then
-   echo -e "${green}Online${normal}"
+    echo -e "${green}Online${normal}"
+    sudo apt update
+    sudo apt install git
     if ! git diff --quiet || ! git diff --cached --quiet; then
       echo "Error: Local changes detected. Commit or stash your changes before pulling."
       exit 1
     fi
-    sudo apt update
-    sudo apt install git
     git pull
   else
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"

@@ -167,12 +167,12 @@ if [ "$first_run" = true ] ; then
 
   if [ $? -eq 0 ]; then
     echo -e "${green}Online${normal}"
+    sudo apt install git
+    sudo apt update
     if ! git diff --quiet || ! git diff --cached --quiet; then
         echo "Error: Local changes detected. Commit or stash your changes before pulling."
         exit 1
     fi
-    sudo apt install git
-    sudo apt update
     git pull
   else
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"
