@@ -88,7 +88,7 @@ for CHOICE in $SELECTIONS; do
 done
 
 cd ~/$WORKSPACE_NAME
-colcon build --mixin rel-with-deb-info --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
+colcon build 
 
 add_to_bashrc "export ROS_WORKSPACE=" "\nexport ROS_WORKSPACE=\"$HOME/$WORKSPACE_NAME\""
 add_to_bashrc "source ~/$WORKSPACE_NAME/devel/" "\nsource ~/$WORKSPACE_NAME/install/setup.bash"
