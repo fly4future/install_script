@@ -16,7 +16,7 @@ CHOICES=(
 )
 
 
-WORKSPACE_NAME=$(whiptail --inputbox "$3\n What should be your workspace name?" 0 0 "workspace" --title "ROS workspace setup" --cancel-button "Cancel"  3>&1 1>&2 2>&3)
+WORKSPACE_NAME=$(whiptail --inputbox "$3\n What should be your workspace name?" 0 0 "workspace" --title "ROS2 workspace setup" --cancel-button "Cancel"  3>&1 1>&2 2>&3)
 
 ret_val=$?
 if [ $ret_val -eq 255 ]; then
@@ -47,26 +47,37 @@ if [[ "$ret_val" -eq 255 ]]; then
 fi
 
 echo "Setting up ~/$WORKSPACE_NAME..."
-source /opt/ros/noetic/setup.bash             # source the general ROS workspace so that the local one will extend it and see all the packages
+source /opt/ros/jazzy/setup.bash             # source the general ROS workspace so that the local one will extend it and see all the packages
 mkdir -p ~/$WORKSPACE_NAME/src && cd ~/$WORKSPACE_NAME    # create the workspace folder in home and cd to it
-catkin init -w ~/$WORKSPACE_NAME                    # initialize the new workspace
-# setup basic compilation profiles
-catkin config --profile debug --cmake-args -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS='-std=c++17 -Og' -DCMAKE_C_FLAGS='-Og'
-catkin config --profile release --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS='-std=c++17'
-catkin config --profile reldeb --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS='-std=c++17'
-catkin profile set reldeb                     # set the reldeb profile as active
+sudo apt install python3-colcon-mixin
+colcon init
+colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+colcon mixin update default
+colcon mixin add mrs https://raw.githubusercontent.com/ctu-mrs/mrs_uav_development/refs/heads/ros2/mixin/index.yaml
+colcon mixin mrs default
+# Create colcon defaults.yaml file with build options
+mkdir -p ~/$WORKSPACE_NAME/.colcon
+cat <<EOT >> ~/$WORKSPACE_NAME/colcon_defaults.yaml
+build:
+  parallel-workers: 8
+  mixin:
+    - rel-with-deb-info
+EOT
 
 mkdir ~/git
 cd ~/git
 for CHOICE in $SELECTIONS; do
   case "$CHOICE" in
     "1") git clone https://github.com/ctu-mrs/mrs_uav_deployment.git
+      git checkout ros2
       ln -s ~/git/mrs_uav_deployment ~/$WORKSPACE_NAME/src/
       ;;
     "2") git clone https://github.com/ctu-mrs/mrs_core_examples.git
+      git checkout ros2
       ln -s ~/git/mrs_core_examples ~/$WORKSPACE_NAME/src/
       ;;
     "3") git clone https://github.com/ctu-mrs/mrs_uav_development.git
+      git checkout ros2
       ln -s ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/
       add_to_bashrc "source ~/git/mrs_uav_development/shell_additions/shell_additions.sh" "\nsource ~/git/mrs_uav_development/shell_additions/shell_additions.sh"
       ;;
@@ -77,7 +88,8 @@ for CHOICE in $SELECTIONS; do
 done
 
 cd ~/$WORKSPACE_NAME
-catkin build
+colcon build --mixin rel-with-deb-info --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
-add_to_bashrc "source ~/$WORKSPACE_NAME/devel/" "\nsource ~/$WORKSPACE_NAME/devel/setup.bash"
+add_to_bashrc "export ROS_WORKSPACE=" "\nexport ROS_WORKSPACE=\"$HOME/$WORKSPACE_NAME\""
+add_to_bashrc "source ~/$WORKSPACE_NAME/devel/" "\nsource ~/$WORKSPACE_NAME/install/setup.bash"
 exit 0
