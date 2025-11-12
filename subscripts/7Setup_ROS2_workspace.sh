@@ -69,15 +69,21 @@ cd ~/git
 for CHOICE in $SELECTIONS; do
   case "$CHOICE" in
     "1") git clone https://github.com/ctu-mrs/mrs_uav_deployment.git
+      cd mrs_uav_deployment
       git checkout ros2
+      cd ..
       ln -s ~/git/mrs_uav_deployment ~/$WORKSPACE_NAME/src/
       ;;
     "2") git clone https://github.com/ctu-mrs/mrs_core_examples.git
+      cd mrs_core_examples
       git checkout ros2
+      cd ..
       ln -s ~/git/mrs_core_examples ~/$WORKSPACE_NAME/src/
       ;;
     "3") git clone https://github.com/ctu-mrs/mrs_uav_development.git
+      cd mrs_uav_development
       git checkout ros2
+      cd ..
       ln -s ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/
       add_to_bashrc "source ~/git/mrs_uav_development/shell_additions/shell_additions.sh" "\nsource ~/git/mrs_uav_development/shell_additions/shell_additions.sh"
       ;;
@@ -91,5 +97,5 @@ cd ~/$WORKSPACE_NAME
 colcon build 
 
 add_to_bashrc "export ROS_WORKSPACE=" "\nexport ROS_WORKSPACE=\"$HOME/$WORKSPACE_NAME\""
-add_to_bashrc "source ~/$WORKSPACE_NAME/devel/" "\nsource ~/$WORKSPACE_NAME/install/setup.bash"
+add_to_bashrc "source ~/$WORKSPACE_NAME/install/" "\nsource ~/$WORKSPACE_NAME/install/setup.bash"
 exit 0
