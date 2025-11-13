@@ -97,5 +97,6 @@ cd ~/$WORKSPACE_NAME
 colcon build 
 
 add_to_bashrc "export ROS_WORKSPACE=" "\nexport ROS_WORKSPACE=\"$HOME/$WORKSPACE_NAME\""
+add_to_bashrc "source /opt/ros/jazzy/setup.bash" "\nsource /opt/ros/jazzy/setup.bash" 
 add_to_bashrc "source ~/$WORKSPACE_NAME/install/" "\nsource ~/$WORKSPACE_NAME/install/setup.bash"
 exit 0
