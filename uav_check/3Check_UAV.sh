@@ -441,75 +441,51 @@ ubuntu20_check () {
 
   # #}
 
-# #{ ros_master_check()
+# #{ ros2_env_check()
 
-ros_master_check () {
+ros2_env_check () {
   ret_val=0
 
-  echo -e "Checking ROS_MASTER_URI env variable ... \c"
-  uri=${ROS_MASTER_URI}
+  # Check ROS_DISTRO
+  echo -e "Checking ROS_DISTRO env variable ... \c"
+  if [ "$ROS_DISTRO" = "jazzy" ]
+  then
+    echo -e "${GREEN}correct${NC} ($ROS_DISTRO)"
+  else
+    echo -e "${RED}incorrect${NC}"
+    echo -e "${YELLOW}ROS_DISTRO should be 'jazzy', but it is: '${ROS_DISTRO}'${NC}"
+    ret_val=1
+  fi
 
-  if [ "$uri" = "http://localhost:11311" ]
+  # Check RMW_IMPLEMENTATION
+  echo -e "Checking RMW_IMPLEMENTATION env variable ... \c"
+  if [ "$RMW_IMPLEMENTATION" = "rmw_zenoh_cpp" ]
+  then
+    echo -e "${GREEN}correct${NC} ($RMW_IMPLEMENTATION)"
+  else
+    echo -e "${RED}incorrect${NC}"
+    echo -e "${YELLOW}RMW_IMPLEMENTATION should be 'rmw_zenoh_cpp', but it is: '${RMW_IMPLEMENTATION}'${NC}"
+    ret_val=1
+  fi
+
+  # Check that ROS1 leftovers are not set
+  echo -e "Checking ROS_MASTER_URI is not set (ROS1 leftover) ... \c"
+  if [ -z "${ROS_MASTER_URI}" ]
   then
     echo -e "${GREEN}correct${NC}"
   else
-    echo -e "${RED}incorrect${NC}"
-    echo -e "${YELLOW}Your ROS_MASTER_URI should be http://localhost:11311, but it is: ${uri}${NC}\n"
+    echo -e "${RED}fail${NC}"
+    echo -e "${YELLOW}ROS_MASTER_URI should not be set for ROS2! Remove it from .bashrc${NC}"
     ret_val=1
   fi
 
-  uri_bashrc=$( cat ~/.bashrc | grep 'ROS_MASTER_URI' | grep -v '#' )
-
-  num_lines_with_uri=$(echo "$uri_bashrc" | wc -l)
-  if [ -z "${uri_bashrc}" ]
-  then
-    num_lines_with_uri=0
-  fi
-
-  echo -e "Checking ROS_MASTER_URI in .bashrc ... \c"
-
-  if [[ $num_lines_with_uri -eq 1 ]]
-  then
-    echo -e "${GREEN}found 1 entry${NC}, this is correct"
-    echo -e "Checking value of ROS_MASTER_URI in .bashrc ... \c"
-    uri_bashrc_grep=$( echo $uri_bashrc | grep 'export ROS_MASTER_URI=http://localhost:11311' )
-
-    if [ -z "${uri_bashrc_grep}" ]
-    then
-      echo -e "${RED}fail${NC}"
-      echo -e "${YELLOW}There should only be 1 entry in ~/.bashrc: export ROS_MASTER_URI=http://localhost:11311${NC}"
-      ret_val=1
-    else
-      echo -e "${GREEN}correct${NC}"
-    fi
-
-  else
-    echo -e "${RED}found $num_lines_with_uri ${NC}entries:"
-    echo -e "${YELLOW}$uri_bashrc${NC}"
-    echo -e "${YELLOW}There should only be 1 entry in ~/.bashrc: export ROS_MASTER_URI=http://localhost:11311${NC}"
-    ret_val=1
-  fi
-
-
-  echo -e "Checking ROS_IP env variable ... \c"
+  echo -e "Checking ROS_IP is not set (ROS1 leftover) ... \c"
   if [ -z "${ROS_IP}" ]
   then
     echo -e "${GREEN}correct${NC}"
   else
     echo -e "${RED}fail${NC}"
-    echo -e "${YELLOW}ROS_IP env variable should be empty!${NC}"
-    ret_val=1
-  fi
-
-  echo -e "Checking ROS_IP in .bashrc variable ... \c"
-
-  ip_bashrc=$( cat ~/.bashrc | grep 'export ROS_IP' | grep -v '#' | wc -l )
-  if [[ $ip_bashrc -eq 0 ]]
-  then
-    echo -e "${GREEN}correct${NC}"
-  else
-    echo -e "${RED}fail${NC}"
-    echo -e "${YELLOW}ROS_IP should not be defined in .bashrc!${NC}"
+    echo -e "${YELLOW}ROS_IP should not be set for ROS2! Remove it from .bashrc${NC}"
     ret_val=1
   fi
 
@@ -614,14 +590,14 @@ ros_master_check () {
   #   fails=$((fails+1))
   # fi
 
-  debugecho "\n----------- ROS_MASTER_URI check start -----------"
+  debugecho "\n----------- ROS2 environment check start -----------"
 
-  ros_master_check
+  ros2_env_check
   if [[ $? -eq 0 ]]
   then
-    debugecho "----------- ${GREEN}ROS_MASTER_URI check passed${NC} -----------"
+    debugecho "----------- ${GREEN}ROS2 environment check passed${NC} -----------"
   else
-    echo -e "----------- ${RED}ROS_MASTER_URI check failed${NC} -----------"
+    echo -e "----------- ${RED}ROS2 environment check failed${NC} -----------"
     fails=$((fails+1))
   fi
 
