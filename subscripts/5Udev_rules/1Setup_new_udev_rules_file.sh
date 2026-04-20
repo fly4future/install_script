@@ -151,7 +151,7 @@ sudo chown root:root $FILENAME
 
 sudo sed -i -e "s/TO_BE_REPLACED/$hostname/g" $FILENAME
 
-devices=$(ls /dev | grep -e ttyUSB -e ttyACM)
+devices=$(ls /dev | grep -e ttyUSB -e ttyACM -e ttyTHS)
 
 if [ -z "${devices}" ]; then
   error_msg "No devices matching the ttyUSBx or ttyACMx pattern found."
