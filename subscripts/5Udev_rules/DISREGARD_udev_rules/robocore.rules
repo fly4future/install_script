@@ -1,0 +1,2 @@
+SUBSYSTEM=="tty", KERNEL=="ttyTHS0", SYMLINK+="pixhawk", OWNER="TO_BE_REPLACED", MODE="0666"
+
