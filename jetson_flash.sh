@@ -1,0 +1,155 @@
+#!/bin/bash
+
+#
+# This script is used to flash a NVIDIA Jetson device
+# The script will:
+#  - download the driver package (BSP) and sample root file system from NVIDIA
+#  - prepare prepare binaries needed to flash the device
+#  - prepare the filesystem with a headless user and autologin enabled
+#  - flash the device with the prepared filesystem and binaries
+#
+# After this script completes you can continue configuration on the device itself with the setup_utility_F4F.sh or setup_utility_MRS.sh scripts
+#
+
+set -euo pipefail
+
+# Change these URLs to point to the version you want to install. Available versions: https://developer.nvidia.com/embedded/jetson-linux-archive
+# Note: it would be nice to change the script so that you just provide the version but nvidia is not 100% consistent with file naming
+# Defaults (can be overridden by prompts below)
+DEFAULT_DRIVER_PACKAGE_URL="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v6.4/release/jetson_linux_r35.6.4_aarch64.tbz2"
+DEFAULT_SAMPLE_ROOT_FS_URL="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v6.4/release/tegra_linux_sample-root-filesystem_r35.6.4_aarch64.tbz2"
+DEFAULT_HEADLESS_USER="uav"
+DEFAULT_HEADLESS_PASSWORD="f4f"
+DEFAULT_HOSTNAME="uavX"
+
+# Prompt for each setting; accept the default by pressing Enter
+
+# For the URLs, ideally we'd just prompt for the version and construct the URLs, but NVIDIA is not consistent with them (sometimes capital letters in filename, sometimes not)
+read -r -p "Driver package URL, see available options at https://developer.nvidia.com/embedded/jetson-linux-archive. [${DEFAULT_DRIVER_PACKAGE_URL}]: " input
+DRIVER_PACKAGE_URL=${input:-$DEFAULT_DRIVER_PACKAGE_URL}
+
+read -r -p "Sample root filesystem URL, see available options at https://developer.nvidia.com/embedded/jetson-linux-archive. [${DEFAULT_SAMPLE_ROOT_FS_URL}]: " input
+SAMPLE_ROOT_FS_URL=${input:-$DEFAULT_SAMPLE_ROOT_FS_URL}
+
+read -r -p "Username [${DEFAULT_HEADLESS_USER}]: " input
+HEADLESS_USER=${input:-$DEFAULT_HEADLESS_USER}
+
+read -r -s -p "Password [${DEFAULT_HEADLESS_PASSWORD}]: " input
+echo
+HEADLESS_PASSWORD=${input:-$DEFAULT_HEADLESS_PASSWORD}
+
+read -r -p "Hostname [${DEFAULT_HOSTNAME}]: " input
+HOSTNAME=${input:-$DEFAULT_HOSTNAME}
+
+read -r -p "Keep temporary files in $HOME/jetson_configure_tmp after flashing? Keep them in case you need to flash multiple times. (Y/n) " input
+input=${input:-y}
+if [[ "$input" == "y" ]] || [[ "$input" == "Y" ]]; then
+    KEEP_TMP_DIR=true
+else
+    KEEP_TMP_DIR=false
+fi
+
+TMP_DIR_NAME="jetson_configure_tmp"
+TMP_DIR_ROOT="$HOME"
+
+
+function cleanup_tmp_dir {
+    if ! $KEEP_TMP_DIR; then
+        echo "Cleaning up temporary files..."
+        sudo rm -rf "$tmp_dir"
+    fi
+}
+
+trap 'cleanup_tmp_dir' EXIT
+
+# Download BSP and root file system
+tmp_dir="$TMP_DIR_ROOT/$TMP_DIR_NAME"
+mkdir -p "$tmp_dir"
+cd "$tmp_dir"
+
+if [ -f jetson_linux.tbz2 ]; then
+    echo "A driver package archive already downloaded, do you want to re-download it? (y/N)"
+    read -r answer
+    answer=${answer:-n}
+    if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
+        wget "$DRIVER_PACKAGE_URL" -O jetson_linux.tbz2
+    else
+        echo "Keeping existing driver package"
+    fi
+else
+    wget "$DRIVER_PACKAGE_URL" -O jetson_linux.tbz2
+fi
+
+if [ -f sample_rootfs.tbz2 ]; then
+    echo "A root filesystem archive already downloaded, do you want to re-download it? (y/N)"
+    read -r answer
+    answer=${answer:-n}
+    if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
+        wget "$SAMPLE_ROOT_FS_URL" -O sample_rootfs.tbz2
+    else
+        echo "Keeping existing root filesystem"
+    fi
+else
+    wget "$SAMPLE_ROOT_FS_URL" -O sample_rootfs.tbz2
+fi
+
+if [ -d Linux_for_Tegra ]; then
+    echo "Linux_for_Tegra directory already exists, re-using it"
+else
+
+    # Extract BSP and root file system
+    echo "Extracting downloaded files..."
+    tar -xvf jetson_linux.tbz2
+    cd "$tmp_dir/Linux_for_Tegra/rootfs/"
+    echo "Extracting filesystem..."
+    sudo tar -jxpf ../../sample_rootfs.tbz2
+
+    # Apply binaries
+    echo "Preparing environment..."
+    cd "$tmp_dir/Linux_for_Tegra"  # Go back to Linux_for_Tegra directory
+    sudo ./tools/l4t_flash_prerequisites.sh
+    sudo ./apply_binaries.sh
+fi
+
+# Create a headless user
+echo "Setting hostname $HOSTNAME and user $HEADLESS_USER with password $HEADLESS_PASSWORD. Autologin enabled."
+cd "$tmp_dir/Linux_for_Tegra/"
+sudo ./tools/l4t_create_default_user.sh --username "$HEADLESS_USER" --password "$HEADLESS_PASSWORD" --autologin --hostname "$HOSTNAME" --accept-license
+
+
+# Tell user to put device in recovery mode. Print instructions, do not let pass until device is in recovery mode)
+echo ""
+echo "Connect the Jetson device to your computer with the USB cable and put it in Force Recovery Mode following these steps:"
+echo "Devices with buttons:"
+echo "1. Power off the device."
+echo "2. Press and hold down the Force Recovery button."
+echo "3. Press, then release the Power button."
+echo "4. Release the Force Recovery button."
+echo ""
+echo "Devices without buttons:"
+echo "1. Turn off the device and disconnect it from power."
+echo "2. Enable Force Recovery Mode by placing a jumper wire across pins 9 and 10 (FC REC and GND), located on the edge of the carrier board under the Jetson module."
+echo "3. Connect power to the device while the jumper is in place. Jetson should automatically boot into Force Recovery Mode."
+echo "4. Remove the jumper wire after the device is powered on."
+echo ""
+echo "The script will continue automatically once the device in Force Recovery Mode is detected"
+
+# Run lsusb until an entry like "ID 0955:7523 NVIDIA Corp. APX" is detected
+while true; do
+    if lsusb | grep -q "NVIDIA Corp. APX"; then
+        echo "Device in Force Recovery Mode detected!"
+        break
+    fi
+    sleep 1
+done
+
+# Flash bootloader to QSPI and rootfs to NVMe. Look at README_initrd_flash.txt for more info about other ways of flashing in case you need it
+echo "Flashing device..."
+sudo ./tools/kernel_flash/l4t_initrd_flash.sh --external-device nvme0n1p1 \
+  -c tools/kernel_flash/flash_l4t_external.xml -p "-c bootloader/t186ref/cfg/flash_t234_qspi.xml" \
+  --showlogs --network usb0 jetson-orin-nano-devkit internal
+
+
+echo ""
+echo "OS flashing complete. Now you can connect to the Jetson and continue configuration there."
+echo ""
