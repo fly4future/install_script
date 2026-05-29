@@ -22,7 +22,7 @@ DEFAULT_HOSTNAME="uav1"
 
 
 # Prompt for each setting; accept the default by pressing Enter
-read -r -p "Jetson Linux version [${DEFAULT_JETSON_LINUX_VERSION}]: " input
+read -r -p "Jetson Linux version [${DEFAULT_JETSON_LINUX_VERSION}]:" input
 JETSON_LINUX_VERSION=${input:-$DEFAULT_JETSON_LINUX_VERSION}
 
 if ! [[ "$JETSON_LINUX_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
@@ -42,17 +42,17 @@ DRIVER_PACKAGE_URL_FALLBACK="${DOWNLOAD_BASE_URL}/jetson_linux_r${VERSION_MAJOR}
 SAMPLE_ROOT_FS_URL="${DOWNLOAD_BASE_URL}/Tegra_Linux_Sample-Root-Filesystem_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
 SAMPLE_ROOT_FS_URL_FALLBACK="${DOWNLOAD_BASE_URL}/tegra_linux_sample-root-filesystem_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
 
-read -r -p "Username [${DEFAULT_HEADLESS_USER}]: " input
+read -r -p "Username [${DEFAULT_HEADLESS_USER}]:" input
 HEADLESS_USER=${input:-$DEFAULT_HEADLESS_USER}
 
-read -r -s -p "Password [${DEFAULT_HEADLESS_PASSWORD}]: " input
-echo
+read -r -s -p "Password [${DEFAULT_HEADLESS_PASSWORD}]:" input
+echo ""
 HEADLESS_PASSWORD=${input:-$DEFAULT_HEADLESS_PASSWORD}
 
-read -r -p "Hostname [${DEFAULT_HOSTNAME}]: " input
+read -r -p "Hostname [${DEFAULT_HOSTNAME}]:" input
 HOSTNAME=${input:-$DEFAULT_HOSTNAME}
 
-read -r -p "Keep temporary files in $HOME/jetson_configure_tmp after flashing? Keep them in case you need to flash multiple times. (Y/n) " input
+read -r -p "Keep temporary files in $HOME/jetson_configure_tmp after flashing? Keep them in case you need to flash multiple times. (Y/n)" input
 input=${input:-y}
 if [[ "$input" == "y" ]] || [[ "$input" == "Y" ]]; then
     KEEP_TMP_DIR=true
@@ -94,26 +94,20 @@ mkdir -p "$tmp_dir"
 cd "$tmp_dir"
 
 if [ -f jetson_linux.tbz2 ]; then
-    echo "A driver package archive already downloaded, do you want to re-download it? (y/N)"
-    read -r answer
+    read -r -p "A driver package archive already downloaded, do you want to re-download it? (y/N):" answer
     answer=${answer:-n}
     if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
         download_with_fallback jetson_linux.tbz2 "$DRIVER_PACKAGE_URL" "$DRIVER_PACKAGE_URL_FALLBACK"
-    else
-        echo "Keeping existing driver package"
     fi
 else
     download_with_fallback jetson_linux.tbz2 "$DRIVER_PACKAGE_URL" "$DRIVER_PACKAGE_URL_FALLBACK"
 fi
 
 if [ -f sample_rootfs.tbz2 ]; then
-    echo "A root filesystem archive already downloaded, do you want to re-download it? (y/N)"
-    read -r answer
+    read -r -p "A root filesystem archive already downloaded, do you want to re-download it? (y/N):" answer
     answer=${answer:-n}
     if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
         download_with_fallback sample_rootfs.tbz2 "$SAMPLE_ROOT_FS_URL" "$SAMPLE_ROOT_FS_URL_FALLBACK"
-    else
-        echo "Keeping existing root filesystem"
     fi
 else
     download_with_fallback sample_rootfs.tbz2 "$SAMPLE_ROOT_FS_URL" "$SAMPLE_ROOT_FS_URL_FALLBACK"
