@@ -20,7 +20,8 @@ DEFAULT_DRIVER_PACKAGE_URL="https://developer.nvidia.com/downloads/embedded/l4t/
 DEFAULT_SAMPLE_ROOT_FS_URL="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v6.4/release/tegra_linux_sample-root-filesystem_r35.6.4_aarch64.tbz2"
 DEFAULT_HEADLESS_USER="uav"
 DEFAULT_HEADLESS_PASSWORD="f4f"
-DEFAULT_HOSTNAME="uavX"
+DEFAULT_HOSTNAME="uav1"
+
 
 # Prompt for each setting; accept the default by pressing Enter
 
