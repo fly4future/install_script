@@ -14,23 +14,33 @@
 set -euo pipefail
 
 # Change these URLs to point to the version you want to install. Available versions: https://developer.nvidia.com/embedded/jetson-linux-archive
-# Note: it would be nice to change the script so that you just provide the version but nvidia is not 100% consistent with file naming
-# Defaults (can be overridden by prompts below)
-DEFAULT_DRIVER_PACKAGE_URL="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v6.4/release/jetson_linux_r35.6.4_aarch64.tbz2"
-DEFAULT_SAMPLE_ROOT_FS_URL="https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v6.4/release/tegra_linux_sample-root-filesystem_r35.6.4_aarch64.tbz2"
+# Prompt for the Jetson Linux version and derive the URLs from it.
+DEFAULT_JETSON_LINUX_VERSION="36.5.0"
 DEFAULT_HEADLESS_USER="uav"
 DEFAULT_HEADLESS_PASSWORD="f4f"
 DEFAULT_HOSTNAME="uav1"
 
 
 # Prompt for each setting; accept the default by pressing Enter
+read -r -p "Jetson Linux version [${DEFAULT_JETSON_LINUX_VERSION}]: " input
+JETSON_LINUX_VERSION=${input:-$DEFAULT_JETSON_LINUX_VERSION}
 
-# For the URLs, ideally we'd just prompt for the version and construct the URLs, but NVIDIA is not consistent with them (sometimes capital letters in filename, sometimes not)
-read -r -p "Driver package URL, see available options at https://developer.nvidia.com/embedded/jetson-linux-archive. [${DEFAULT_DRIVER_PACKAGE_URL}]: " input
-DRIVER_PACKAGE_URL=${input:-$DEFAULT_DRIVER_PACKAGE_URL}
+if ! [[ "$JETSON_LINUX_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+    echo "Invalid Jetson Linux version: $JETSON_LINUX_VERSION (expected major.minor.patch)" >&2
+    exit 1
+fi
 
-read -r -p "Sample root filesystem URL, see available options at https://developer.nvidia.com/embedded/jetson-linux-archive. [${DEFAULT_SAMPLE_ROOT_FS_URL}]: " input
-SAMPLE_ROOT_FS_URL=${input:-$DEFAULT_SAMPLE_ROOT_FS_URL}
+VERSION_MAJOR="${BASH_REMATCH[1]}"
+VERSION_MINOR="${BASH_REMATCH[2]}"
+VERSION_PATCH="${BASH_REMATCH[3]}"
+
+DOWNLOAD_BASE_URL="https://developer.nvidia.com/downloads/embedded/l4t/r${VERSION_MAJOR}_release_v${VERSION_MINOR}.${VERSION_PATCH}/release"
+
+# Nvidia is not consistent with their file naming, sometimes they use capital letters, sometimes not
+DRIVER_PACKAGE_URL="${DOWNLOAD_BASE_URL}/Jetson_Linux_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
+DRIVER_PACKAGE_URL_FALLBACK="${DOWNLOAD_BASE_URL}/jetson_linux_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
+SAMPLE_ROOT_FS_URL="${DOWNLOAD_BASE_URL}/Tegra_Linux_Sample-Root-Filesystem_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
+SAMPLE_ROOT_FS_URL_FALLBACK="${DOWNLOAD_BASE_URL}/tegra_linux_sample-root-filesystem_r${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}_aarch64.tbz2"
 
 read -r -p "Username [${DEFAULT_HEADLESS_USER}]: " input
 HEADLESS_USER=${input:-$DEFAULT_HEADLESS_USER}
@@ -61,6 +71,21 @@ function cleanup_tmp_dir {
     fi
 }
 
+function download_with_fallback {
+    local output_file="$1"
+    shift
+
+    local url
+    for url in "$@"; do
+        if wget "$url" -O "$output_file"; then
+            return 0
+        fi
+    done
+
+    echo "Unable to download ${output_file}" >&2
+    exit 1
+}
+
 trap 'cleanup_tmp_dir' EXIT
 
 # Download BSP and root file system
@@ -73,12 +98,12 @@ if [ -f jetson_linux.tbz2 ]; then
     read -r answer
     answer=${answer:-n}
     if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
-        wget "$DRIVER_PACKAGE_URL" -O jetson_linux.tbz2
+        download_with_fallback jetson_linux.tbz2 "$DRIVER_PACKAGE_URL" "$DRIVER_PACKAGE_URL_FALLBACK"
     else
         echo "Keeping existing driver package"
     fi
 else
-    wget "$DRIVER_PACKAGE_URL" -O jetson_linux.tbz2
+    download_with_fallback jetson_linux.tbz2 "$DRIVER_PACKAGE_URL" "$DRIVER_PACKAGE_URL_FALLBACK"
 fi
 
 if [ -f sample_rootfs.tbz2 ]; then
@@ -86,12 +111,12 @@ if [ -f sample_rootfs.tbz2 ]; then
     read -r answer
     answer=${answer:-n}
     if [[ "$answer" == "y" ]] || [[ "$answer" == "Y" ]]; then
-        wget "$SAMPLE_ROOT_FS_URL" -O sample_rootfs.tbz2
+        download_with_fallback sample_rootfs.tbz2 "$SAMPLE_ROOT_FS_URL" "$SAMPLE_ROOT_FS_URL_FALLBACK"
     else
         echo "Keeping existing root filesystem"
     fi
 else
-    wget "$SAMPLE_ROOT_FS_URL" -O sample_rootfs.tbz2
+    download_with_fallback sample_rootfs.tbz2 "$SAMPLE_ROOT_FS_URL" "$SAMPLE_ROOT_FS_URL_FALLBACK"
 fi
 
 if [ -d Linux_for_Tegra ]; then
