@@ -62,7 +62,7 @@ error_msg() {
   whiptail --title "Udev config" --msgbox "$1" 0 0
 }
 
-yesno_def_no "Delete some selected previous udev rules files? (Remanants from previous setups etc.)"
+yesno_def_no "Delete some selected previous udev rules files? (Remnants from previous setups etc.)"
 ret_val=$?
 
 if [ $ret_val -eq 1 ]; then
@@ -193,7 +193,7 @@ else
     if [ $ret_val -eq 1 ]; then
       exit 1
     else
-      echo -e "\n#Following line was added by MRS UAV System Intall utility:" | sudo tee -a $FILENAME >/dev/null
+      echo -e "\n#Following line was added by MRS UAV System Install utility:" | sudo tee -a $FILENAME >/dev/null
 
       if [ -z "${Serial}" ]; then
         echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
