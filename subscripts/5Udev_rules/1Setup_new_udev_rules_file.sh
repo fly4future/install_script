@@ -145,10 +145,9 @@ else
   touch $FILENAME
 fi
 
-hostname=$(cat /etc/hostname)
 sudo chown root:root $FILENAME
 
-sudo sed -i -e "s/TO_BE_REPLACED/$hostname/g" $FILENAME
+sudo sed -i -e "s/TO_BE_REPLACED/$USER/g" $FILENAME
 
 devices=$(ls /dev | grep -e ttyUSB -e ttyACM -e ttyTHS)
 
@@ -196,9 +195,9 @@ else
       echo -e "\n#Following line was added by MRS UAV System Install utility:" | sudo tee -a $FILENAME >/dev/null
 
       if [ -z "${Serial}" ]; then
-        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
+        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
       else
-        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", ATTRS{serial}==\"$Serial\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
+        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", ATTRS{serial}==\"$Serial\", SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
       fi
     fi
   done
