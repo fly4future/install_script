@@ -126,6 +126,10 @@ else
       echo "      routes:" >>/tmp/01-netcfg.yaml
       echo "        - to: default" >>/tmp/01-netcfg.yaml
       echo "          via: $gateway" >>/tmp/01-netcfg.yaml
+
+      dns=$(input_box "Enter your DNS server address for $int:" "8.8.8.8")
+      echo "      nameservers:" >>/tmp/01-netcfg.yaml
+      echo "        addresses: [$dns]" >>/tmp/01-netcfg.yaml
     fi
   done
 fi
