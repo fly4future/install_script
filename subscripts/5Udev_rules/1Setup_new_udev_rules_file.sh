@@ -80,7 +80,6 @@ if [ $ret_val -eq 1 ]; then
     if [[ ! -d ${file} ]]; then
       OPTIONS+=("$index")
       let "index++"
-      has_99=$(echo $filename | grep "99")
       OPTIONS+=("$filename")
       OPTIONS+=("OFF")
       FULL_FILEPATHS+=("$file")
@@ -125,7 +124,6 @@ if [ $ret_val -eq 1 ]; then
     if [[ ! -d ${file} ]]; then
       OPTIONS+=("$index")
       let "index++"
-      has_99=$(echo $filename | grep "99")
       OPTIONS+=("$filename")
       FULL_FILEPATHS+=("$file")
     fi
