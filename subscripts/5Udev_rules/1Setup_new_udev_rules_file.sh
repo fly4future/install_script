@@ -4,7 +4,7 @@ show_menu() {
   whiptail --title "Udev config" --menu "$1:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
 }
 
-yesno_def_no () {
+yesno_def_no() {
   whiptail --title "Udev Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
   ret_val=$?
 
@@ -21,8 +21,8 @@ yesno_def_no () {
   fi
 }
 
-yesno_def_yes () {
-  whiptail --title "Udev Config" --yesno "$1"  0 0
+yesno_def_yes() {
+  whiptail --title "Udev Config" --yesno "$1" 0 0
   ret_val=$?
 
   if [ $ret_val -eq 255 ]; then
@@ -38,7 +38,7 @@ yesno_def_yes () {
   fi
 }
 
-input_box () {
+input_box() {
   tmp=$(whiptail --inputbox "$1" 0 0 "$2" 3>&1 1>&2 2>&3)
   ret_val=$?
 
@@ -58,7 +58,7 @@ input_box () {
   fi
 }
 
-error_msg () {
+error_msg() {
   whiptail --title "Udev config" --msgbox "$1" 0 0
 }
 
@@ -98,7 +98,7 @@ if [ $ret_val -eq 1 ]; then
   fi
 
   for CHOICE in $SELECTIONS; do
-    sudo rm ${FULL_FILEPATHS[$((CHOICE - 1))]}
+    sudo rm "${FULL_FILEPATHS[$((CHOICE - 1))]}"
   done
 fi
 
@@ -133,13 +133,13 @@ if [ $ret_val -eq 1 ]; then
   chosen_filename=""
   choice=$(show_menu "What frame udev rules do you want to use?")
   if [ $? -eq 0 ]; then
-    chosen_filename=$(echo ${FULL_FILEPATHS[$((choice - 1))]})
+    chosen_filename="${FULL_FILEPATHS[$((choice - 1))]}"
   else
     # echo "Menu canceled."
     exit 1
   fi
 
-  cp $chosen_filename $FILENAME
+  cp "$chosen_filename" $FILENAME
 
 else
   touch $FILENAME
@@ -155,7 +155,6 @@ devices=$(ls /dev | grep -e ttyUSB -e ttyACM -e ttyTHS)
 if [ -z "${devices}" ]; then
   error_msg "No devices matching the ttyUSBx or ttyACMx pattern found."
 else
-
 
   for device in ${devices}; do
 
@@ -178,7 +177,6 @@ else
     Serial=$(udevadm info /dev/$device | grep "ID_SERIAL_SHORT")
     Serial="${Serial##*"="}"
 
-
     yesno_def_yes "Do you want to add udev rule for this device? $device:\n$device_info"
     ret_val=$?
 
@@ -195,12 +193,12 @@ else
     if [ $ret_val -eq 1 ]; then
       exit 1
     else
-      echo -e "\n#Following line was added by MRS UAV System Intall utility:" | sudo tee -a $FILENAME > /dev/null
+      echo -e "\n#Following line was added by MRS UAV System Intall utility:" | sudo tee -a $FILENAME >/dev/null
 
       if [ -z "${Serial}" ]; then
-        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME > /dev/null
+        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
       else
-        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", ATTRS{serial}==\"$Serial\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME > /dev/null
+        echo -e "SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\", ATTRS{serial}==\"$Serial\", SYMLINK+=\"$symlink\", OWNER=\"$hostname\", MODE=\"0666\"" | sudo tee -a $FILENAME >/dev/null
       fi
     fi
   done
