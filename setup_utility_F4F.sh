@@ -163,7 +163,12 @@ if [ "$first_run" = true ]; then
   if [ $? -eq 0 ]; then
     echo -e "${green}Online${normal}"
     sudo apt update
-    sudo apt install git
+
+    if ! command -v git &>/dev/null; then
+      echo "Git is not installed. Installing git..."
+      sudo apt install git
+    fi
+
     if ! git diff --quiet || ! git diff --cached --quiet; then
       echo "Error: Local changes detected. Commit or stash your changes before pulling."
       exit 1
