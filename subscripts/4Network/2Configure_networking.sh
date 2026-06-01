@@ -161,7 +161,9 @@ else
       else 
         gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
       fi
-      echo "      gateway4: $gateway" >> /tmp/01-netcfg.yaml
+      echo "      routes:" >>/tmp/01-netcfg.yaml
+      echo "        - to: default" >>/tmp/01-netcfg.yaml
+      echo "          via: $gateway" >>/tmp/01-netcfg.yaml
 
     fi
 
