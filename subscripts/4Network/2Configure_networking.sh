@@ -123,6 +123,10 @@ else
       address=$(input_box "Enter your static IP address for $int:" "10.10.20.101")
       echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
 
+      gateway=$(input_box "Enter your default gateway address for $int:" "10.10.20.1")
+      echo "      routes:" >>/tmp/01-netcfg.yaml
+      echo "        - to: default" >>/tmp/01-netcfg.yaml
+      echo "          via: $gateway" >>/tmp/01-netcfg.yaml
     fi
   done
 fi
