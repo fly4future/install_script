@@ -204,3 +204,7 @@ else
 fi
 
 sudo cp $FILENAME /etc/udev/rules.d/
+
+# Apply the new udev rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
