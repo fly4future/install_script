@@ -46,7 +46,7 @@ input_box() {
     exit 1
   elif [ $ret_val -eq 0 ]; then
     # valid input
-    echo $tmp #this will output the string that is user input, and we can capture it into a variable - e.g. foo=$(input_box)
+    printf '%s\n' "$tmp" # this outputs the user input so callers can capture it (e.g. foo=$(input_box ...)
     return 0
   else
     echo "Error state"
@@ -93,14 +93,13 @@ fi
 
 FILENAME=/tmp/01-netcfg.yaml
 rm -f -- "$FILENAME"
-touch $FILENAME
-echo "network:" >>/tmp/01-netcfg.yaml
-echo "  version: 2" >>/tmp/01-netcfg.yaml
-echo "  renderer: networkd" >>/tmp/01-netcfg.yaml
+touch -- "$FILENAME"
+echo "network:" >>"$FILENAME"
+echo "  version: 2" >>"$FILENAME"
+echo "  renderer: networkd" >>"$FILENAME"
 
-interfaces=$(ls /sys/class/net)
-eths=$(echo $interfaces | grep -o "\w*eth\w*")
-wlans=$(echo $interfaces | grep -o "\w*wlan\w*")
+eths=$(ls /sys/class/net | grep -E '^eth')
+wlans=$(ls /sys/class/net | grep -E '^wlan')
 
 if [ -z "${eths}" ]; then
   error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first.\n\n\n Continuing with Wi-Fi config. "
