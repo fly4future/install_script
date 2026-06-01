@@ -104,7 +104,7 @@ if [ $ret_val -eq 1 ]; then
 fi
 
 FILENAME=/tmp/99-usb-serial-MRS.rules
-sudo rm $FILENAME
+sudo rm $FILENAME 2>/dev/null || true
 
 yesno_def_yes "Are you using an MRS distribution board?"
 ret_val=$?
