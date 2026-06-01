@@ -68,6 +68,12 @@ disable_network_manager () {
   sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 }
 
+# If netplan is not installed, install it
+if ! command -v netplan &> /dev/null; then
+  echo "Netplan not found, installing..."
+  sudo apt update && sudo apt install -y netplan.io
+fi
+
 yesno_def_yes "This script will configure networking on the device. Systemd-networkd will be used as the backend for netplan and NetworkManager will be disabled. If you're connected via SSH you may lose connection when applying. Do you want to continue?"
 ret_val=$?
 
