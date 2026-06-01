@@ -13,6 +13,7 @@ if [[ -f /etc/default/grub ]]; then
   sudo update-grub
 elif [[ -f /boot/extlinux/extlinux.conf ]]; then
     # Device is using extlinux (e.g. NVIDIA Jetson)
+    echo "Creating backup of extlinux.conf at /boot/extlinux/extlinux.conf.bak"
 	sudo cp /boot/extlinux/extlinux.conf /boot/extlinux/extlinux.conf.bak
 	if grep -q '^[[:space:]]*APPEND .*net\.ifnames=' /boot/extlinux/extlinux.conf; then
 		sudo sed -i '/^[[:space:]]*APPEND / s/net\.ifnames=[^[:space:]]*/net.ifnames=0/g' /boot/extlinux/extlinux.conf
