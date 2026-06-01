@@ -5,7 +5,7 @@ show_menu() {
 }
 
 yesno_def_no () {
-  whiptail --title "Netplan Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
+  whiptail --title "Udev Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
   ret_val=$?
 
   if [ $ret_val -eq 255 ]; then
@@ -22,7 +22,7 @@ yesno_def_no () {
 }
 
 yesno_def_yes () {
-  whiptail --title "Netplan Config" --yesno "$1"  0 0
+  whiptail --title "Udev Config" --yesno "$1"  0 0
   ret_val=$?
 
   if [ $ret_val -eq 255 ]; then
@@ -59,7 +59,7 @@ input_box () {
 }
 
 error_msg () {
-  whiptail --title "Netplan config" --msgbox "$1" 0 0
+  whiptail --title "Udev config" --msgbox "$1" 0 0
 }
 
 yesno_def_no "Delete some selected previous udev rules files? (Remanants from previous setups etc.)"
