@@ -88,12 +88,12 @@ yesno_def_yes "Delete all previous netplan configs? (Recommended)"
 ret_val=$?
 
 if [ $ret_val -eq 1 ]; then
-  sudo rm /etc/netplan/*
+  sudo rm -f /etc/netplan/*.yaml
 fi
 
 
 FILENAME=/tmp/01-netcfg.yaml
-rm $FILENAME
+rm -f -- "$FILENAME"
 touch $FILENAME
 echo "network:" >> /tmp/01-netcfg.yaml
 echo "  version: 2" >> /tmp/01-netcfg.yaml
@@ -148,7 +148,7 @@ else
       echo "      dhcp6: no" >> /tmp/01-netcfg.yaml
 
       address=""
-      if [ $1 = "f4f" ]; then
+      if [[ "$1" == "f4f" ]]; then
         address=$(input_box "Enter your static IP address for $int:" "192.168.12.101")
       else 
         address=$(input_box "Enter your static IP address for $int:" "192.168.69.101")
@@ -156,7 +156,7 @@ else
       echo "      addresses: [$address/24]" >> /tmp/01-netcfg.yaml
 
       gateway=""
-      if [ $1 = "f4f" ]; then
+      if [[ "$1" == "f4f" ]]; then
         gateway=$(input_box "Enter your default gateway address:" "192.168.12.1")
       else 
         gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
@@ -166,7 +166,7 @@ else
     fi
 
     ap_name=""
-    if [ $1 = "f4f" ]; then
+    if [[ "$1" == "f4f" ]]; then
       ap_name=$(input_box "Enter your WiFi name (SSID):" "f4f_robot")
     else 
       ap_name=$(input_box "Enter your WiFi name (SSID):" "mrs_ctu")

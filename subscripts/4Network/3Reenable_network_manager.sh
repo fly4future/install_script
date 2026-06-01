@@ -10,13 +10,15 @@ elif [ $ret_val -eq 1 ]; then
   sudo systemctl unmask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
   sudo systemctl enable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 
-  sudo systemctl disable --now systemd-networkd systemd-resolved
-  sudo systemctl mask systemd-networkd systemd-resolved
+  sudo systemctl disable --now systemd-networkd
+  sudo systemctl mask systemd-networkd
+  sudo systemctl unmask systemd-resolved
+  sudo systemctl enable --now systemd-resolved
 
-  sudo rm /etc/netplan/*
+  sudo rm -f /etc/netplan/*.yaml
 
   FILENAME=/tmp/01-network-manager-all.yaml
-  rm $FILENAME 2> /dev/null
+  rm -f -- "$FILENAME"
   touch $FILENAME
   echo "network:" >> $FILENAME
   echo "  version: 2" >> $FILENAME
