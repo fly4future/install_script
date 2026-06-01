@@ -204,6 +204,7 @@ if [ $ret_val -eq 1 ]; then
   # Then apply the netplan config
   echo "Copying netplan ..."
   sudo cp /tmp/01-netcfg.yaml /etc/netplan
+  sudo chmod 600 /etc/netplan/01-netcfg.yaml
   echo "Applying netplan ..."
   sudo netplan generate
   sudo netplan apply
