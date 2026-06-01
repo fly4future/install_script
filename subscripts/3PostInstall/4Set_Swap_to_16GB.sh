@@ -1,3 +1,5 @@
+#!/bin/bash
+
 sudo swapoff -a
 sudo fallocate -l 16G /swapfile
 sudo chmod 600 /swapfile

@@ -1,4 +1,5 @@
 #!/bin/bash
+
 show_menu() {
   whiptail --title "Udev config" --menu "$1:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
 }
