@@ -54,17 +54,17 @@ for device in $devices; do
 
   symlink=$(input_box "What should this device be named?")
 
-  rule_line="SUBSYSTEM=\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
+  rule_line="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
   if [ -n "$Serial" ]; then
     rule_line="$rule_line, ATTRS{serial}==\"$Serial\""
   fi
   rule_line="$rule_line, SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
 
   if [ "$wrote_anything" = false ]; then
-    generated_rules="# Following line was added by MRS UAV System Install utility:\n${rule_line}"
+    generated_rules="# Following line was added by MRS UAV System Install utility:"$'\n'"${rule_line}"
     wrote_anything=true
   else
-    generated_rules="${generated_rules}\n\n# Following line was added by MRS UAV System Install utility:\n${rule_line}"
+    generated_rules+=$'\n\n'"# Following line was added by MRS UAV System Install utility:"$'\n'"${rule_line}"
   fi
 done
 
