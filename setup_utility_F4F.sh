@@ -7,8 +7,7 @@ red='\033[0;31m'
 green='\033[0;32m'
 
 light=$(echo $PROFILES | grep COLORSCHEME_LIGHT)
-if [ -z "$light" ]
-then
+if [ -z "$light" ]; then
   export NEWT_COLORS='
   root=brightgreen,black
   border=brightgreen,black
@@ -43,7 +42,6 @@ else
   entry=white,green
   '
 fi
-
 
 # export NEWT_COLORS='
 # root=brightgreen,black
@@ -87,12 +85,10 @@ fi
 
 # Specify the folder path where your files are located
 
-
 DIR="$(dirname "$(readlink -f "$0")")"
 folder_path=""
 first_run=true
-if [ -z "$1" ]
-then
+if [ -z "$1" ]; then
   folder_path="$DIR/subscripts"
   sudo chmod -R +x "$DIR/subscripts"
   sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
@@ -140,8 +136,7 @@ index="1"
 for file in "$folder_path"/*; do
   # Add each filename to the array
   disregard=$(echo $file | grep "DISREGARD")
-  if [ ! -z "$disregard" ]
-  then
+  if [ ! -z "$disregard" ]; then
     continue
   fi
 
@@ -150,7 +145,7 @@ for file in "$folder_path"/*; do
   filename="${file##*"/"}"
   filename="${filename%.*}"
   filename="${filename//_/ }"
-  filename="${filename#[[:digit:]]}" #removes the first digit from script name
+  filename="${filename#[[:digit:]]}" # removes the first digit from script name
 
   if [[ -d ${file} ]]; then
     OPTIONS+=("$filename ...")
@@ -161,8 +156,8 @@ for file in "$folder_path"/*; do
   FULL_FILEPATHS+=("$file")
 done
 
-if [ "$first_run" = true ] ; then
-  #Check connection to the internet
+if [ "$first_run" = true ]; then
+  # Check connection to the internet
   wget -q --spider http://google.com
 
   if [ $? -eq 0 ]; then
@@ -181,11 +176,10 @@ if [ "$first_run" = true ] ; then
     read -p "${blink}${bold}Hit enter to continue ...${normal}"
   fi
 
-  #Check for whiptail
+  # Check for whiptail
   whiptail_installed=$(apt-cache policy whiptail | grep Installed | grep none)
 
-  if [ ! -z "$whiptail_installed" ]
-  then
+  if [ ! -z "$whiptail_installed" ]; then
     echo "Whiptail NOT installed, will install now:"
     sudo apt install whiptail
   fi
