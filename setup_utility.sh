@@ -172,8 +172,17 @@ if [ "$first_run" = true ]; then
 
   if [ $? -eq 0 ]; then
     echo -e "${green}Online${normal}"
-    sudo apt update
 
+    # Check if apt update was already successfully ran in the last 60 minutes and if so, do not run it again
+    if [ -f /var/lib/apt/periodic/update-success-stamp ]; then
+      last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp)
+      now=$(date +%s)
+      if [ $((now - last_update)) -lt 3600 ]; then
+        echo "Apt update was already successfully ran in the last 60 minutes, not running it again"
+      else
+        sudo apt update
+      fi
+    fi
     if ! command -v git &>/dev/null; then
       echo "Git is not installed. Installing git..."
       sudo apt install git
@@ -199,7 +208,7 @@ if [ "$first_run" = true ]; then
     sudo apt install whiptail
   fi
 
-   # Ask whether the user wants to use F4F or MRS defaults
+  # Ask whether the user wants to use F4F or MRS defaults
   f4f_mrs_choice=$(show_f4f_mrs_switch_menu)
   case $f4f_mrs_choice in
   1)
