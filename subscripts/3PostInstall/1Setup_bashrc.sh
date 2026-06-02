@@ -105,4 +105,5 @@ add_var_to_bashrc "OLD_PX4_FW" "false" "Are we running an old (1.12) Pixhawk FW?
 # add_var_to_bashrc "ROS_MASTER_URI" "http://localhost:11311" "Address of the ROS master. Do not modify on UAVs"
 add_var_to_bashrc "ROS_DISTRO" "jazzy" "ROS 2 distribution to use.\n values: jazzy"
 add_var_to_bashrc "RMW_IMPLEMENTATION" "rmw_zenoh_cpp" "ROS 2 middleware implementation to use.\n values: rmw_zenoh_cpp"
-exit 1
+
+exit 0

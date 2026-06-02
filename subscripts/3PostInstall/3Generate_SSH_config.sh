@@ -1,6 +1,6 @@
 #!/bin/bash
 
-key_name="~/.ssh/id_rsa_drone_login"
+key_name="$HOME/.ssh/id_rsa_drone_login"
 
 input=(
 
@@ -88,9 +88,6 @@ input=(
   'vit'           'vit'     '192.168.69.48'
 )
 
-# get path to script
-SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
-
 VIM_BIN="$(whereis vim | awk '{print $2}')"
 HEADLESS=""
 
@@ -114,7 +111,7 @@ for ((i=0; i < ${#hostname[*]}; i++)); do
   echo ""
   echo "Processing ${hostname[i]}"
 
-  num=`cat ~/.ssh/config | grep "host ${hostname[i]}" | wc -l`
+  num=$(cat ~/.ssh/config | grep "host ${hostname[i]}" | wc -l)
   if [ "$num" -lt "1" ]; then
 
     echo Creating new entry in .ssh/config for ${hostname[i]} ${ip[i]}
@@ -136,7 +133,7 @@ for ((i=0; i < ${#hostname[*]}; i++)); do
   # move the current entry to the bottom of the file
   $VIM_BIN $HEADLESS -Ens -c "set ignorecase" -c "%g/${ip[i]}\s.*/norm dapGp" -c "wqa" -- "$HOME/.ssh/config"
 
-  num=`cat /etc/hosts | grep ".* ${hostname[i]}$" | wc -l`
+  num=$(cat /etc/hosts | grep ".* ${hostname[i]}$" | wc -l)
   if [ "$num" -ge "1" ]; then
 
     # delete the old entry
@@ -145,7 +142,7 @@ for ((i=0; i < ${#hostname[*]}; i++)); do
 
   fi
 
-  num=`cat /etc/hosts | grep "${ip[i]}\s" | wc -l`
+  num=$(cat /etc/hosts | grep "${ip[i]}\s" | wc -l)
   if [ "$num" -ge "1" ]; then
 
     # delete the old entry
@@ -174,7 +171,7 @@ echo ""
 echo "deleting old entry of this PC in /etc/hosts"
 sudo $VIM_BIN $HEADLESS -Ens -c "set ignorecase" -c "%g/127.0.1.1\s*${my_hostname}$/norm dd" -c "wqa" -- "/etc/hosts"
 
-num=`cat ~/.ssh/config | grep "127.0.1.1 ${my_hostname}" | wc -l`
+num=$(cat ~/.ssh/config | grep "127.0.1.1 ${my_hostname}" | wc -l)
 if [ "$num" -lt "1" ]; then
 
   echo ""
