@@ -6,9 +6,8 @@ blink=$(tput blink)
 red='\033[0;31m'
 green='\033[0;32m'
 
-light=$(echo $PROFILES | grep COLORSCHEME_LIGHT)
-if [ -z "$light" ]
-then
+light=$(echo "$PROFILES" | grep COLORSCHEME_LIGHT)
+if [ -z "$light" ]; then
   export NEWT_COLORS='
   root=brightgreen,black
   border=brightgreen,black
@@ -43,7 +42,6 @@ else
   entry=white,green
   '
 fi
-
 
 # export NEWT_COLORS='
 # root=brightgreen,black
@@ -86,13 +84,10 @@ fi
 # roottext=lightgrey,black
 
 # Specify the folder path where your files are located
-
-
 DIR="$(dirname "$(readlink -f "$0")")"
 folder_path=""
 first_run=true
-if [ -z "$1" ]
-then
+if [ -z "$1" ]; then
   folder_path="$DIR/subscripts"
   sudo chmod -R +x "$DIR/subscripts"
   sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
@@ -106,14 +101,25 @@ fi
 OPTIONS=()
 FULL_FILEPATHS=()
 
-show_menu() {
+show_main_menu() {
   whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
 }
 
+show_f4f_mrs_switch_menu() {
+
+  F4F_MRS_SWITCH_OPTIONS=(
+    1 "Use F4F defaults"
+    2 "Use MRS defaults"
+  )
+
+  whiptail --title "MRS UAV System Install Utility" --menu "Do you want to use F4F or MRS defaults?" 0 0 0 "${F4F_MRS_SWITCH_OPTIONS[@]}" 3>&1 1>&2 2>&3
+}
+
 main() {
+
   while true; do
     clear
-    choice=$(show_menu)
+    choice=$(show_main_menu)
 
     if [ $? -eq 0 ]; then
       echo ${FULL_FILEPATHS[$((choice - 1))]}
@@ -140,8 +146,7 @@ index="1"
 for file in "$folder_path"/*; do
   # Add each filename to the array
   disregard=$(echo $file | grep "DISREGARD")
-  if [ ! -z "$disregard" ]
-  then
+  if [ ! -z "$disregard" ]; then
     continue
   fi
 
@@ -150,7 +155,7 @@ for file in "$folder_path"/*; do
   filename="${file##*"/"}"
   filename="${filename%.*}"
   filename="${filename//_/ }"
-  filename="${filename#[[:digit:]]}" #removes the first digit from script name
+  filename="${filename#[[:digit:]]}" # removes the first digit from script name
 
   if [[ -d ${file} ]]; then
     OPTIONS+=("$filename ...")
@@ -161,17 +166,31 @@ for file in "$folder_path"/*; do
   FULL_FILEPATHS+=("$file")
 done
 
-if [ "$first_run" = true ] ; then
-  #Check connection to the internet
+if [ "$first_run" = true ]; then
+  # Check connection to the internet
   wget -q --spider http://google.com
 
   if [ $? -eq 0 ]; then
     echo -e "${green}Online${normal}"
-    sudo apt install git
-    sudo apt update
+
+    # Check if apt update was already successfully ran in the last 60 minutes and if so, do not run it again
+    if [ -f /var/lib/apt/periodic/update-success-stamp ]; then
+      last_update=$(stat -c %Y /var/lib/apt/periodic/update-success-stamp)
+      now=$(date +%s)
+      if [ $((now - last_update)) -lt 3600 ]; then
+        echo "Apt update was already successfully ran in the last 60 minutes, not running it again"
+      else
+        sudo apt update
+      fi
+    fi
+    if ! command -v git &>/dev/null; then
+      echo "Git is not installed. Installing git..."
+      sudo apt install git
+    fi
+
     if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo "Error: Local changes detected. Commit or stash your changes before pulling."
-        exit 1
+      echo "Error: Local changes detected. Commit or stash your changes before pulling."
+      exit 1
     fi
     git pull
   else
@@ -181,14 +200,29 @@ if [ "$first_run" = true ] ; then
     read -p "${blink}${bold}Hit enter to continue ...${normal}"
   fi
 
-  #Check for whiptail
+  # Check for whiptail
   whiptail_installed=$(apt-cache policy whiptail | grep Installed | grep none)
 
-  if [ ! -z "$whiptail_installed" ]
-  then
+  if [ ! -z "$whiptail_installed" ]; then
     echo "Whiptail NOT installed, will install now:"
     sudo apt install whiptail
   fi
 
+  # Ask whether the user wants to use F4F or MRS defaults
+  f4f_mrs_choice=$(show_f4f_mrs_switch_menu)
+  case $f4f_mrs_choice in
+  1)
+    echo "Using F4F defaults"
+    export USE_DEFAULTS_FOR="F4F"
+    ;;
+  2)
+    echo "Using MRS defaults"
+    export USE_DEFAULTS_FOR="MRS"
+    ;;
+  *) # the default case, also called when cancel is selected
+    exit 1
+    ;;
+  esac
 fi
+
 main

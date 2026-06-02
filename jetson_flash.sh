@@ -8,7 +8,7 @@
 #  - prepare the filesystem with a headless user and autologin enabled
 #  - flash the device with the prepared filesystem and binaries
 #
-# After this script completes you can continue configuration on the device itself with the setup_utility_F4F.sh or setup_utility_MRS.sh scripts
+# After this script completes you can continue configuration on the device itself with the setup_utility.sh script
 #
 
 set -euo pipefail
