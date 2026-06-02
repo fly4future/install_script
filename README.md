@@ -16,16 +16,11 @@ The script will also ask you whether you want to keep the temporary files after 
 In case you change your mind you can always delete the entire directory (by default `~/jetson_configure_tmp`).
 The size of this directory is about 75 GB.
 
-After the script completes, you can continue configuration on the Jetson device by cloning this repository and running one of the `setup_utility.sh` scripts.
+After the script completes, you can continue configuration on the Jetson device by cloning this repository and running the `setup_utility.sh` script.
 
 ## Configuration utility
 
-- Run the script with "setup_utility.sh" in the root directory of the repository.
-- The menu items will be automatically generated from the "subscripts"
-   folder
-- Scripts and folders will appear in the menu as items or
-   folders.
-
-   You can easily add new functionality by putting new scripts into the
-   subscripts folder. See examples of menus in the "examples_whiptail"
-   folder.
+- Run the script with `setup_utility.sh` in the root directory of the repository.
+- The menu items will be automatically generated from the "subscripts" folder
+- Scripts and folders will appear in the menu as items or folders.
+- You can easily add new functionality by putting new scripts into the subscripts folder. See examples of menus in the `examples_whiptail` folder.
