@@ -6,7 +6,7 @@ blink=$(tput blink)
 red='\033[0;31m'
 green='\033[0;32m'
 
-light=$(echo $PROFILES | grep COLORSCHEME_LIGHT)
+light=$(echo "$PROFILES" | grep COLORSCHEME_LIGHT)
 if [ -z "$light" ]; then
   export NEWT_COLORS='
   root=brightgreen,black
@@ -84,7 +84,6 @@ fi
 # roottext=lightgrey,black
 
 # Specify the folder path where your files are located
-
 DIR="$(dirname "$(readlink -f "$0")")"
 folder_path=""
 first_run=true
@@ -102,14 +101,25 @@ fi
 OPTIONS=()
 FULL_FILEPATHS=()
 
-show_menu() {
+show_main_menu() {
   whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
 }
 
+show_f4f_mrs_switch_menu() {
+
+  F4F_MRS_SWITCH_OPTIONS=(
+    1 "Use F4F defaults"
+    2 "Use MRS defaults"
+  )
+
+  whiptail --title "MRS UAV System Install Utility" --menu "Do you want to use F4F or MRS defaults?" 0 0 0 "${F4F_MRS_SWITCH_OPTIONS[@]}" 3>&1 1>&2 2>&3
+}
+
 main() {
+
   while true; do
     clear
-    choice=$(show_menu)
+    choice=$(show_main_menu)
 
     if [ $? -eq 0 ]; then
       echo ${FULL_FILEPATHS[$((choice - 1))]}
@@ -117,9 +127,9 @@ main() {
 
       if [[ -d ${FULL_FILEPATHS[$((choice - 1))]} ]]; then
         echo "is a directory"
-        ./$0 ${FULL_FILEPATHS[$((choice - 1))]} f4f #Run this script again but in the selected folder, add the f4f parameter
+        ./$0 ${FULL_FILEPATHS[$((choice - 1))]} #Run this script again but in the selected folder
       else
-        ${FULL_FILEPATHS[$((choice - 1))]} f4f #add the f4f parameter
+        ${FULL_FILEPATHS[$((choice - 1))]}
       fi
       if [ $? -eq 0 ]; then
         read -p "${blink}${bold}Hit enter to continue ...${normal}"
@@ -189,5 +199,21 @@ if [ "$first_run" = true ]; then
     sudo apt install whiptail
   fi
 
+   # Ask whether the user wants to use F4F or MRS defaults
+  f4f_mrs_choice=$(show_f4f_mrs_switch_menu)
+  case $f4f_mrs_choice in
+  1)
+    echo "Using F4F defaults"
+    export USE_DEFAULTS_FOR="F4F"
+    ;;
+  2)
+    echo "Using MRS defaults"
+    export USE_DEFAULTS_FOR="MRS"
+    ;;
+  *) # the default case, also called when cancel is selected
+    exit 1
+    ;;
+  esac
 fi
+
 main

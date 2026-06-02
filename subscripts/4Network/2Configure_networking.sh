@@ -153,15 +153,15 @@ else
       echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
 
       address=""
-      if [[ "$1" == "f4f" ]]; then
+      if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
         address=$(input_box "Enter your static IP address for $int:" "192.168.12.101")
-      else
+      elif [[ $USE_DEFAULTS_FOR == "MRS" ]]; then
         address=$(input_box "Enter your static IP address for $int:" "192.168.69.101")
       fi
       echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
 
       gateway=""
-      if [[ "$1" == "f4f" ]]; then
+      if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
         gateway=$(input_box "Enter your default gateway address:" "192.168.12.1")
       else
         gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
@@ -173,7 +173,7 @@ else
     fi
 
     ap_name=""
-    if [[ "$1" == "f4f" ]]; then
+    if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
       ap_name=$(input_box "Enter your WiFi name (SSID):" "f4f_robot")
     else
       ap_name=$(input_box "Enter your WiFi name (SSID):" "mrs_ctu")
