@@ -196,14 +196,25 @@ if [ "$NON_INTERACTIVE_MODE" -eq 0 ]; then
       echo "      access-points:" >>/tmp/01-netcfg.yaml
       echo "        \"$ap_name\":" >>/tmp/01-netcfg.yaml
 
-      password=$(input_box "Enter your WiFi password:" "mikrokopter")
-      echo "          password: \"$password\"" >>/tmp/01-netcfg.yaml
+    ap_name=""
+    if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
+      ap_name=$(input_box "Enter your WiFi name (SSID):" "f4f_robot")
+    else
+      ap_name=$(input_box "Enter your WiFi name (SSID):" "mrs_ctu")
+    fi
+    
+    echo "      access-points:" >>/tmp/01-netcfg.yaml
+    echo "        \"$ap_name\":" >>/tmp/01-netcfg.yaml
 
-      if [ $dhcp -eq 0 ]; then
-        dns=$(input_box "Enter your DNS server address:" "8.8.8.8")
-        echo "      nameservers:" >>/tmp/01-netcfg.yaml
-        echo "        addresses: [$dns]" >>/tmp/01-netcfg.yaml
-      fi
+    password=$(input_box "Enter your WiFi password:" "mikrokopter")
+    echo "          password: \"$password\"" >>/tmp/01-netcfg.yaml
+
+
+    if [ $dhcp -eq 0 ]; then
+      dns=$(input_box "Enter your DNS server address:" "8.8.8.8")
+      echo "      nameservers:" >>/tmp/01-netcfg.yaml
+      echo "        addresses: [$dns]" >>/tmp/01-netcfg.yaml
+    fi
 
     done
   fi
