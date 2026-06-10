@@ -166,7 +166,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
 
         address=""
-      if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
+        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
           address=$(input_box "Enter your static IP address for $int:" "192.168.12.101")
         else
           address=$(input_box "Enter your static IP address for $int:" "192.168.69.101")
@@ -174,7 +174,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
 
         gateway=""
-      if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
+        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
           gateway=$(input_box "Enter your default gateway address:" "192.168.12.1")
         else
           gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
@@ -183,7 +183,6 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "        - to: default" >>/tmp/01-netcfg.yaml
         echo "          via: $gateway" >>/tmp/01-netcfg.yaml
         echo "          metric: 200" >>/tmp/01-netcfg.yaml
-
       fi
 
       ap_name=""
