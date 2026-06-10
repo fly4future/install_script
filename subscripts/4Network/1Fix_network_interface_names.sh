@@ -31,6 +31,12 @@ else
 	exit 1
 fi
 
-echo " "
-echo "Changes will be applied only after system reboot"
-exit 0
+whiptail --title "Fix network interface names" --yesno "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now?" --defaultno 0 0
+ret_val=$?
+
+if [ $ret_val -eq 0 ]; then
+	sudo reboot
+else
+	whiptail --title "Fix network interface names" --msgbox "Please reboot the system as soon as possible to apply the changes.\nNetwork configuration will not work correctly until then (wrong interface names)" 0 0
+	exit 1
+fi
