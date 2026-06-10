@@ -114,7 +114,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
   wlans=$(ls /sys/class/net | grep -E '^wlan')
 
   if [ -z "${eths}" ]; then
-    error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first.\n\n\n Continuing with Wi-Fi config. "
+    error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n Continuing with Wi-Fi config. "
   else
     echo "  ethernets:" >>/tmp/01-netcfg.yaml
 
@@ -148,7 +148,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
   fi
 
   if [ -z "${wlans}" ]; then
-    error_msg "No Wlan interfaces found! (looking for wlan0, wlan1 ...).\nYour Wlan interfaces may have different names, run the Network Interface Names Fix first.\n\n\n"
+    error_msg "No Wlan interfaces found! (looking for wlan0, wlan1 ...).\nYour Wlan interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n"
   else
     echo "  wifis:" >>/tmp/01-netcfg.yaml
 
