@@ -114,7 +114,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
   wlans=$(ls /sys/class/net | grep -E '^wlan')
 
   if [ -z "${eths}" ]; then
-    error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first.\n\n\n Continuing with Wi-Fi config. "
+    error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n Continuing with Wi-Fi config. "
   else
     echo "  ethernets:" >>/tmp/01-netcfg.yaml
 
@@ -148,7 +148,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
   fi
 
   if [ -z "${wlans}" ]; then
-    error_msg "No Wlan interfaces found! (looking for wlan0, wlan1 ...).\nYour Wlan interfaces may have different names, run the Network Interface Names Fix first.\n\n\n"
+    error_msg "No Wlan interfaces found! (looking for wlan0, wlan1 ...).\nYour Wlan interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n"
   else
     echo "  wifis:" >>/tmp/01-netcfg.yaml
 
@@ -166,7 +166,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
 
         address=""
-        if [[ "$1" == "f4f" ]]; then
+        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
           address=$(input_box "Enter your static IP address for $int:" "192.168.12.101")
         else
           address=$(input_box "Enter your static IP address for $int:" "192.168.69.101")
@@ -174,7 +174,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
 
         gateway=""
-        if [[ "$1" == "f4f" ]]; then
+        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
           gateway=$(input_box "Enter your default gateway address:" "192.168.12.1")
         else
           gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
@@ -183,18 +183,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "        - to: default" >>/tmp/01-netcfg.yaml
         echo "          via: $gateway" >>/tmp/01-netcfg.yaml
         echo "          metric: 200" >>/tmp/01-netcfg.yaml
-
       fi
-
-      ap_name=""
-      if [[ "$1" == "f4f" ]]; then
-        ap_name=$(input_box "Enter your WiFi name (SSID):" "f4f_robot")
-      else
-        ap_name=$(input_box "Enter your WiFi name (SSID):" "mrs_ctu")
-      fi
-
-      echo "      access-points:" >>/tmp/01-netcfg.yaml
-      echo "        \"$ap_name\":" >>/tmp/01-netcfg.yaml
 
       ap_name=""
       if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then

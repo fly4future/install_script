@@ -168,6 +168,7 @@ done
 
 if [ "$first_run" = true ]; then
   # Check connection to the internet
+  echo "Checking internet connection..."
   wget -q --spider http://google.com
 
   if [ $? -eq 0 ]; then
