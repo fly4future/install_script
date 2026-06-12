@@ -1,2 +1,0 @@
-Vsechny akce a vystupy terminalu logovat to log filu s datem a casem - pro debug
-TEST TEST
