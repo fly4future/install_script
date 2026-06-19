@@ -92,6 +92,8 @@ if [ -z "$1" ]; then
   sudo chmod -R +x "$DIR/subscripts"
   sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
   sudo chmod +x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
+  sudo chmod -R -x "$DIR/subscripts/3PostInstall/DISREGARD"
+  sudo chmod +x "$DIR/subscripts/3PostInstall/DISREGARD"
 else
   folder_path="$1"
   first_run=false
