@@ -45,7 +45,7 @@ function download_with_fallback {
 trap 'cleanup_tmp_root_dir' EXIT
 
 # Prompt for each setting; accept the default by pressing Enter
-read -r -p "Jetson Linux version [${default_jetson_linux_version}]: " input
+read -r -p "Jetson Linux version. List of available versions here: https://developer.nvidia.com/embedded/jetson-linux-archive [${default_jetson_linux_version}]: " input
 jetson_linux_version=${input:-$default_jetson_linux_version}
 
 if ! [[ "$jetson_linux_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
