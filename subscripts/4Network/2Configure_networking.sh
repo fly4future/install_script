@@ -228,21 +228,19 @@ else
   fi
 fi
 
-# First ensure systemd-networkd is enabled and running
 echo "Enabling systemd-networkd ..."
 enable_systemd_networkd
 
-# Then apply the netplan config
+echo "Disabling NetworkManager ..."
+disable_network_manager
+
 echo "Copying netplan ..."
 sudo cp /tmp/01-netcfg.yaml /etc/netplan
 sudo chmod 600 /etc/netplan/01-netcfg.yaml
+
 echo "Applying netplan ..."
 sudo netplan generate
 sudo netplan apply
-
-# Finally, disable network manager
-echo "Disabling NetworkManager ..."
-disable_network_manager
 
 echo "Done"
 exit 0
