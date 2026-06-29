@@ -181,4 +181,8 @@ sudo ./tools/kernel_flash/l4t_initrd_flash.sh \
 
 echo ""
 echo "OS flashing complete. Now you can connect to the Jetson and continue configuration there."
+echo "The Jetson board supports Ethernet over USB, so you can connect to it with SSH directly over the USB cable you used to flash it."
+echo "IP address of the Jetson is 192.168.55.1 and your PC will get the address 192.168.55.100 assigned by DHCP automatically."
+echo "Use the following command to connect to the Jetson over SSH:"
+echo "ssh ${user}@192.168.55.1"
 echo ""
