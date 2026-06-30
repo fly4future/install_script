@@ -3,11 +3,10 @@
 script_dir="$(dirname "$(realpath "$0")")"
 folder_path="$script_dir/DISREGARD/wallpapers"
 
-echo "Available wallpapers in $folder_path"
-
 # Build options array
 options=()
 for file in "$folder_path"/*; do
+  [ -f "$file" ] || continue
   filename=$(basename "$file")
   options+=("$filename" "")
 done
@@ -24,11 +23,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Full path to selected file
-wallpaper_path="$folder_path/$wallpaper"
+local_wallpaper_path="$folder_path/$wallpaper"  # The wallpaper path in the local subscripts folder
+sudo mkdir -p "/usr/share/backgrounds"  # Ensure the system backgrounds folder exists
+system_wallpaper_path="/usr/share/backgrounds/$wallpaper" # The wallpaper path in the system folder. Technically RPi uses a different directory for their defaults, but this one seem to be the most universal one.
 
-gsettings set org.gnome.desktop.background picture-uri "file://$wallpaper_path" # Light mode
-gsettings set org.gnome.desktop.background picture-uri-dark "file://$wallpaper_path" # Dark mode
+# Copy the selected wallpaper to the system folder, so that it persists even after we delete the install script directory
+sudo cp "$local_wallpaper_path" "$system_wallpaper_path"
+
+gsettings set org.gnome.desktop.background picture-uri "file://$system_wallpaper_path"       # Light mode
+gsettings set org.gnome.desktop.background picture-uri-dark "file://$system_wallpaper_path"  # Dark mode
 
 # Exit 1 will not show the "Press enter to continue" menu but rather go straight back to the main menu
 exit 1
