@@ -1,63 +1,50 @@
 #!/bin/bash
 
-set -euo pipefail
+set -u
 
-yesno_def_no() {
-  whiptail --title "Network Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
-  ret_val=$?
-
-  if [ $ret_val -eq 255 ]; then
-    exit 1
-  elif [ $ret_val -eq 1 ]; then
-    # echo "User hit Yes"
-    return 1
-  elif [ $ret_val -eq 0 ]; then
-    # echo "User hit No"
-    return 0
-  else
-    echo "Error state"
-  fi
-}
+TITLE="Network Config"
+FILENAME="/tmp/01-netcfg.yaml"
 
 yesno_def_yes() {
-  whiptail --title "Network Config" --yesno "$1" 0 0
+  whiptail --title "$TITLE" --yesno "$1" 0 0
   ret_val=$?
 
-  if [ $ret_val -eq 255 ]; then
+  if [ "$ret_val" -eq 255 ]; then
     exit 1
-  elif [ $ret_val -eq 0 ]; then
-    # echo "User hit Yes"
-    return 1
-  elif [ $ret_val -eq 1 ]; then
-    # echo "User hit No"
-    return 0
+  elif [ "$ret_val" -eq 0 ]; then
+    return 1 # user selected Yes
+  elif [ "$ret_val" -eq 1 ]; then
+    return 0 # user selected No
   else
     echo "Error state"
+    exit 1
   fi
 }
 
 input_box() {
-  tmp=$(whiptail --inputbox "$1" 0 0 "$2" 3>&1 1>&2 2>&3)
+  local prompt="$1"
+  local default_value="${2:-}"
+
+  local tmp
+  tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
+
   ret_val=$?
 
-  if [ $ret_val -eq 255 ]; then
-    # User hit Escape
+  if [ "$ret_val" -eq 255 ]; then
     exit 1
-  elif [ $ret_val -eq 1 ]; then
-    # User hit Cancel
+  elif [ "$ret_val" -eq 1 ]; then
     exit 1
-  elif [ $ret_val -eq 0 ]; then
-    # valid input
-    printf '%s\n' "$tmp" # this outputs the user input so callers can capture it (e.g. foo=$(input_box ...)
+  elif [ "$ret_val" -eq 0 ]; then
+    printf '%s\n' "$tmp"
     return 0
   else
     echo "Error state"
-    exit 0
+    exit 1
   fi
 }
 
 error_msg() {
-  whiptail --title "Network config" --msgbox "$1" 0 0
+  whiptail --title "$TITLE" --msgbox "$1" 0 0
 }
 
 enable_systemd_networkd() {
@@ -66,183 +53,527 @@ enable_systemd_networkd() {
 }
 
 disable_network_manager() {
-  sudo systemctl disable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
-  sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
+  sudo systemctl disable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
+  sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
 }
 
-# If netplan is not installed, install it
-if ! command -v netplan &>/dev/null; then
-  echo "Netplan not found, installing..."
-  sudo apt-get update && sudo apt-get install -y netplan.io
-fi
+is_wifi_interface() {
+  local int="$1"
+  [[ "$int" =~ ^wlan[0-9]+$ ]]
+}
 
-if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
-  yesno_def_yes "This script will configure networking on the device. Systemd-networkd will be used as the backend for netplan and NetworkManager will be disabled. If you're connected via SSH you may lose connection when applying. Do you want to continue?"
-  ret_val=$?
-  if [ $ret_val -eq 1 ]; then
-    echo "Continuing with network config..."
-  elif [ $ret_val -eq 0 ]; then
+is_ethernet_interface() {
+  local int="$1"
+  [[ "$int" =~ ^eth[0-9]+$ ]]
+}
+
+get_default_ip_for_interface() {
+  local int="$1"
+
+  if is_wifi_interface "$int"; then
+    if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
+      echo "192.168.12.101"
+    else
+      echo "192.168.69.101"
+    fi
+  else
+    echo "10.10.20.101"
+  fi
+}
+
+get_default_gateway_for_interface() {
+  local int="$1"
+
+  if is_wifi_interface "$int"; then
+    if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
+      echo "192.168.12.1"
+    else
+      echo "192.168.69.1"
+    fi
+  else
+    echo "10.10.20.1"
+  fi
+}
+
+get_default_ssid() {
+  if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
+    echo "f4f_robot"
+  else
+    echo "mrs_ctu"
+  fi
+}
+
+get_default_wifi_password() {
+  echo "mikrokopter"
+}
+
+init_interface_defaults() {
+  local int="$1"
+
+  CFG_ENABLED["$int"]="yes"
+  CFG_DHCP4["$int"]="yes"
+  CFG_ADDRESS["$int"]="$(get_default_ip_for_interface "$int")"
+  CFG_PREFIX["$int"]="24"
+  CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
+  CFG_DNS["$int"]="8.8.8.8"
+
+  if is_wifi_interface "$int"; then
+    CFG_TYPE["$int"]="wifi"
+    CFG_SSID["$int"]="$(get_default_ssid)"
+    CFG_PASSWORD["$int"]="$(get_default_wifi_password)"
+  else
+    CFG_TYPE["$int"]="ethernet"
+    CFG_SSID["$int"]=""
+    CFG_PASSWORD["$int"]=""
+  fi
+}
+
+interface_summary() {
+  local int="$1"
+  local enabled="${CFG_ENABLED[$int]}"
+  local dhcp="${CFG_DHCP4[$int]}"
+
+  if [ "$enabled" != "yes" ]; then
+    echo "disabled"
+    return
+  fi
+
+  if [ "$dhcp" = "yes" ]; then
+    echo "DHCP"
+  else
+    echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
+  fi
+}
+
+edit_interface_menu() {
+  local int="$1"
+
+  while true; do
+    local type="${CFG_TYPE[$int]}"
+    local menu_text
+
+    menu_text="Interface: $int
+
+Current summary:
+$(interface_summary "$int")
+
+Choose option to edit:"
+
+    local menu_items=(
+      "Enabled" "${CFG_ENABLED[$int]}"
+    )
+
+    if [ "${CFG_ENABLED[$int]}" = "yes" ]; then
+      menu_items+=(
+        "DHCP IPv4" "${CFG_DHCP4[$int]}"
+      )
+
+      if [ "${CFG_DHCP4[$int]}" = "no" ]; then
+        menu_items+=(
+          "Static address" "${CFG_ADDRESS[$int]}"
+          "CIDR prefix" "${CFG_PREFIX[$int]}"
+          "Default gateway" "${CFG_GATEWAY[$int]}"
+          "DNS server" "${CFG_DNS[$int]}"
+        )
+      fi
+
+      if [ "$type" = "wifi" ]; then
+        menu_items+=(
+          "Wi-Fi SSID" "${CFG_SSID[$int]}"
+          "Wi-Fi password" "${CFG_PASSWORD[$int]}"
+        )
+      fi
+    fi
+
+    local choice
+    choice=$(whiptail --title "$TITLE - $int" --ok-button "Edit" --cancel-button "Back" --menu "$menu_text" \
+      22 60 10 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+    ret_val=$?
+
+    case "$ret_val" in
+    0)
+      ;;
+    1)
+      # User pressed Back
+      return
+      ;;
+
+    255)
+      # Escape
+      return
+      ;;
+
+    *)
+      echo "Error state"
+      exit 1
+      ;;
+    esac
+
+    case "$choice" in
+    "Enabled")
+      yesno_def_yes "Enable interface $int?"
+      if [ "$?" -eq 1 ]; then
+        CFG_ENABLED["$int"]="yes"
+      else
+        CFG_ENABLED["$int"]="no"
+      fi
+      ;;
+
+    "DHCP IPv4")
+      yesno_def_yes "Use DHCP IPv4 on $int?"
+      if [ "$?" -eq 1 ]; then
+        CFG_DHCP4["$int"]="yes"
+      else
+        CFG_DHCP4["$int"]="no"
+      fi
+      ;;
+
+    "Static address")
+      CFG_ADDRESS["$int"]=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}")
+      CFG_DHCP4["$int"]="no"
+      ;;
+
+    "CIDR prefix")
+      CFG_PREFIX["$int"]=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}")
+      CFG_DHCP4["$int"]="no"
+      ;;
+
+    "Default gateway")
+      CFG_GATEWAY["$int"]=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}")
+      CFG_DHCP4["$int"]="no"
+      ;;
+
+    "DNS server")
+      CFG_DNS["$int"]=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}")
+      ;;
+
+    "Wi-Fi SSID")
+      CFG_SSID["$int"]=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}")
+      ;;
+
+    "Wi-Fi password")
+      CFG_PASSWORD["$int"]=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}")
+      ;;
+    esac
+  done
+}
+
+main_interface_menu() {
+  while true; do
+    local menu_items=()
+
+    for int in "${INTERFACES[@]}"; do
+      menu_items+=("$int" "$(interface_summary "$int")")
+    done
+
+    # Blank separator line
+    menu_items+=(" " " ")
+
+    menu_items+=("Save/Apply" "Generate netplan and continue")
+
+    local choice
+    choice=$(whiptail --title "$TITLE" \
+      --ok-button "Select" \
+      --cancel-button "Cancel" \
+      --menu "Select an interface to configure:" \
+      24 60 14 \
+      "${menu_items[@]}" \
+      3>&1 1>&2 2>&3)
+
+    ret_val=$?
+
+    case "$ret_val" in
+    0)
+      case "$choice" in
+      "Save/Apply")
+        generate_netplan
+        return
+        ;;
+
+      " ")  # Blank separator line, ignore
+        continue
+        ;;
+
+      *)
+        edit_interface_menu "$choice"
+        ;;
+      esac
+      ;;
+    *)
+      echo "Error state"
+      exit 1
+      ;;
+    esac
+  done
+}
+
+generate_netplan() {
+  rm -f -- "$FILENAME"
+
+  {
+    echo "network:"
+    echo "  version: 2"
+    echo "  renderer: networkd"
+  } >>"$FILENAME"
+
+  local has_ethernet="no"
+  local has_wifi="no"
+
+  for int in "${INTERFACES[@]}"; do
+    [ "${CFG_ENABLED[$int]}" = "yes" ] || continue
+
+    if [ "${CFG_TYPE[$int]}" = "ethernet" ]; then
+      has_ethernet="yes"
+    elif [ "${CFG_TYPE[$int]}" = "wifi" ]; then
+      has_wifi="yes"
+    fi
+  done
+
+  if [ "$has_ethernet" = "yes" ]; then
+    echo "  ethernets:" >>"$FILENAME"
+
+    for int in "${INTERFACES[@]}"; do
+      [ "${CFG_ENABLED[$int]}" = "yes" ] || continue
+      [ "${CFG_TYPE[$int]}" = "ethernet" ] || continue
+
+      {
+        echo "    $int:"
+        echo "      dhcp4: ${CFG_DHCP4[$int]}"
+        echo "      dhcp6: no"
+      } >>"$FILENAME"
+
+      if [ "${CFG_DHCP4[$int]}" = "no" ]; then
+        {
+          echo "      addresses:"
+          echo "        - ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
+          echo "      routes:"
+          echo "        - to: default"
+          echo "          via: ${CFG_GATEWAY[$int]}"
+          echo "      nameservers:"
+          echo "        addresses:"
+          echo "          - ${CFG_DNS[$int]}"
+        } >>"$FILENAME"
+      fi
+    done
+  fi
+
+  if [ "$has_wifi" = "yes" ]; then
+    echo "  wifis:" >>"$FILENAME"
+
+    for int in "${INTERFACES[@]}"; do
+      [ "${CFG_ENABLED[$int]}" = "yes" ] || continue
+      [ "${CFG_TYPE[$int]}" = "wifi" ] || continue
+
+      {
+        echo "    $int:"
+        echo "      dhcp4: ${CFG_DHCP4[$int]}"
+        echo "      dhcp6: no"
+      } >>"$FILENAME"
+
+      if [ "${CFG_DHCP4[$int]}" = "no" ]; then
+        {
+          echo "      addresses:"
+          echo "        - ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
+          echo "      routes:"
+          echo "        - to: default"
+          echo "          via: ${CFG_GATEWAY[$int]}"
+          echo "      nameservers:"
+          echo "        addresses:"
+          echo "          - ${CFG_DNS[$int]}"
+        } >>"$FILENAME"
+      fi
+
+      {
+        echo "      access-points:"
+        echo "        \"${CFG_SSID[$int]}\":"
+        echo "          password: \"${CFG_PASSWORD[$int]}\""
+      } >>"$FILENAME"
+    done
+  fi
+}
+
+validate_basic_config() {
+  local errors=""
+
+  for int in "${INTERFACES[@]}"; do
+    [ "${CFG_ENABLED[$int]}" = "yes" ] || continue
+
+    if [ "${CFG_DHCP4[$int]}" = "no" ]; then
+      if [ -z "${CFG_ADDRESS[$int]}" ]; then
+        errors="${errors}\n$int: missing static IP address"
+      fi
+
+      if [ -z "${CFG_PREFIX[$int]}" ]; then
+        errors="${errors}\n$int: missing CIDR prefix"
+      fi
+
+      if [ -z "${CFG_GATEWAY[$int]}" ]; then
+        errors="${errors}\n$int: missing gateway"
+      fi
+
+      if [ -z "${CFG_DNS[$int]}" ]; then
+        errors="${errors}\n$int: missing DNS server"
+      fi
+    fi
+
+    if [ "${CFG_TYPE[$int]}" = "wifi" ]; then
+      if [ -z "${CFG_SSID[$int]}" ]; then
+        errors="${errors}\n$int: missing Wi-Fi SSID"
+      fi
+
+      if [ -z "${CFG_PASSWORD[$int]}" ]; then
+        errors="${errors}\n$int: missing Wi-Fi password"
+      fi
+    fi
+  done
+
+  if [ -n "$errors" ]; then
+    error_msg "Configuration errors:$errors"
+    return 1
+  fi
+
+  return 0
+}
+
+install_netplan_if_missing() {
+  if ! command -v netplan >/dev/null 2>&1; then
+    echo "Netplan not found, installing..."
+    sudo apt update && sudo apt install -y netplan.io
+  fi
+}
+
+detect_interfaces() {
+  INTERFACES=()
+
+  while IFS= read -r int; do
+    if is_ethernet_interface "$int" || is_wifi_interface "$int"; then
+      INTERFACES+=("$int")
+    fi
+  done < <(ls /sys/class/net)
+
+  if [ "${#INTERFACES[@]}" -eq 0 ]; then
+    error_msg "No ethX or wlanX network interfaces found.
+
+Your interfaces may have different names, for example:
+enp3s0, ens33, wlp2s0
+
+Run the Network Interface Names Fix first and then restart this script."
+    exit 1
+  fi
+}
+
+copy_and_apply_netplan() {
+  echo "Enabling systemd-networkd ..."
+  enable_systemd_networkd
+
+  echo "Disabling NetworkManager ..."
+  disable_network_manager
+
+  echo "Copying netplan ..."
+  sudo cp "$FILENAME" /etc/netplan/01-netcfg.yaml
+  sudo chmod 600 /etc/netplan/01-netcfg.yaml
+
+  echo "Generating netplan ..."
+  sudo netplan generate
+
+  echo "Applying netplan ..."
+  sudo netplan apply
+
+  echo "Done"
+}
+
+interactive_mode() {
+  yesno_def_yes "This script will configure networking on the device.
+
+systemd-networkd will be used as the backend for netplan and NetworkManager will be disabled.
+
+If you are connected via SSH, you may lose connection when applying.
+
+Do you want to continue?"
+
+  if [ "$?" -eq 0 ]; then
     echo "Aborting network config..."
     exit 0
   fi
-fi
 
-if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
-  yesno_def_yes "Delete all previous netplan configs? (Recommended)"
-  ret_val=$?
-  if [ $ret_val -eq 1 ]; then
+  yesno_def_yes "Delete all previous netplan configs? Recommended."
+
+  if [ "$?" -eq 1 ]; then
     sudo rm -f /etc/netplan/*.yaml
   fi
-else
-  # Non-interactive mode handling
+
+  detect_interfaces
+
+  declare -gA CFG_TYPE
+  declare -gA CFG_ENABLED
+  declare -gA CFG_DHCP4
+  declare -gA CFG_ADDRESS
+  declare -gA CFG_PREFIX
+  declare -gA CFG_GATEWAY
+  declare -gA CFG_DNS
+  declare -gA CFG_SSID
+  declare -gA CFG_PASSWORD
+
+  for int in "${INTERFACES[@]}"; do
+    init_interface_defaults "$int"
+  done
+
+  while true; do
+    main_interface_menu
+
+    if ! validate_basic_config; then
+      continue
+    fi
+
+    local netplan_preview
+    netplan_preview=$(cat "$FILENAME")
+
+    yesno_def_yes "The following netplan was generated:
+
+  $netplan_preview
+
+  Copy to /etc/netplan and apply?"
+
+    if [ "$?" -eq 1 ]; then
+      # User selected Yes
+      break
+    else
+      # User selected No, go back to interface selection menu
+      continue
+    fi
+  done
+}
+
+non_interactive_mode() {
   if [ "${NETWORKING_DELETE_PREVIOUS_NETPLAN_CONFIGS:-}" = "true" ]; then
-    echo "removing previous netplan configs"
+    echo "Removing previous netplan configs"
     sudo rm -f /etc/netplan/*.yaml
   else
-    echo "keeping previous netplan configs"
-  fi
-fi
-
-FILENAME=/tmp/01-netcfg.yaml
-rm -f -- "$FILENAME"
-touch -- "$FILENAME"
-
-if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
-  echo "network:" >>"$FILENAME"
-  echo "  version: 2" >>"$FILENAME"
-  echo "  renderer: networkd" >>"$FILENAME"
-
-  eths=$(ls /sys/class/net | grep -E '^eth')
-  wlans=$(ls /sys/class/net | grep -E '^wlan')
-
-  if [ -z "${eths}" ]; then
-    error_msg "No Ethernet interfaces found! (looking for eth0, eth1 ...).\nYour Ethernet interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n Continuing with Wi-Fi config. "
-  else
-    echo "  ethernets:" >>/tmp/01-netcfg.yaml
-
-    for int in ${eths}; do
-      echo "    $int:" >>/tmp/01-netcfg.yaml
-
-      yesno_def_no "Do you want to use DHCP on $int?"
-      ret_val=$?
-
-      if [ $ret_val -eq 1 ]; then
-        echo "      dhcp4: yes" >>/tmp/01-netcfg.yaml
-        echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
-      elif [ $ret_val -eq 0 ]; then
-        echo "      dhcp4: no" >>/tmp/01-netcfg.yaml
-        echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
-
-        address=$(input_box "Enter your static IP address for $int:" "10.10.20.101")
-        echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
-
-        gateway=$(input_box "Enter your default gateway address for $int:" "10.10.20.1")
-        echo "      routes:" >>/tmp/01-netcfg.yaml
-        echo "        - to: default" >>/tmp/01-netcfg.yaml
-        echo "          via: $gateway" >>/tmp/01-netcfg.yaml
-        echo "          metric: 200" >>/tmp/01-netcfg.yaml
-
-        dns=$(input_box "Enter your DNS server address for $int:" "8.8.8.8")
-        echo "      nameservers:" >>/tmp/01-netcfg.yaml
-        echo "        addresses: [$dns]" >>/tmp/01-netcfg.yaml
-      fi
-    done
+    echo "Keeping previous netplan configs"
   fi
 
-  if [ -z "${wlans}" ]; then
-    error_msg "No Wlan interfaces found! (looking for wlan0, wlan1 ...).\nYour Wlan interfaces may have different names, run the Network Interface Names Fix first and then restart.\n\n\n"
-  else
-    echo "  wifis:" >>/tmp/01-netcfg.yaml
-
-    for int in ${wlans}; do
-      echo "    $int:" >>/tmp/01-netcfg.yaml
-
-      yesno_def_no "Do you want to use DHCP on $int?"
-      dhcp=$?
-
-      if [ $dhcp -eq 1 ]; then
-        echo "      dhcp4: yes" >>/tmp/01-netcfg.yaml
-        echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
-      elif [ $dhcp -eq 0 ]; then
-        echo "      dhcp4: no" >>/tmp/01-netcfg.yaml
-        echo "      dhcp6: no" >>/tmp/01-netcfg.yaml
-
-        address=""
-        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
-          address=$(input_box "Enter your static IP address for $int:" "192.168.12.101")
-        else
-          address=$(input_box "Enter your static IP address for $int:" "192.168.69.101")
-        fi
-        echo "      addresses: [$address/24]" >>/tmp/01-netcfg.yaml
-
-        gateway=""
-        if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
-          gateway=$(input_box "Enter your default gateway address:" "192.168.12.1")
-        else
-          gateway=$(input_box "Enter your default gateway address:" "192.168.69.1")
-        fi
-        echo "      routes:" >>/tmp/01-netcfg.yaml
-        echo "        - to: default" >>/tmp/01-netcfg.yaml
-        echo "          via: $gateway" >>/tmp/01-netcfg.yaml
-        echo "          metric: 100" >>/tmp/01-netcfg.yaml
-      fi
-
-      ap_name=""
-      if [[ $USE_DEFAULTS_FOR == "F4F" ]]; then
-        ap_name=$(input_box "Enter your WiFi name (SSID):" "f4f_robot")
-      else
-        ap_name=$(input_box "Enter your WiFi name (SSID):" "mrs_ctu")
-      fi
-
-      echo "      access-points:" >>/tmp/01-netcfg.yaml
-      echo "        \"$ap_name\":" >>/tmp/01-netcfg.yaml
-
-      password=$(input_box "Enter your WiFi password:" "mikrokopter")
-      echo "          password: \"$password\"" >>/tmp/01-netcfg.yaml
-
-      if [ $dhcp -eq 0 ]; then
-        dns=$(input_box "Enter your DNS server address:" "8.8.8.8")
-        echo "      nameservers:" >>/tmp/01-netcfg.yaml
-        echo "        addresses: [$dns]" >>/tmp/01-netcfg.yaml
-      fi
-
-    done
-  fi
-
-  netplan=$(cat /tmp/01-netcfg.yaml)
-  yesno_def_yes "The following netplan was generated: \n\n $netplan \n\n Copy to /etc/netplan and Apply?"
-  ret_val=$?
-
-  if [ $ret_val -eq 0 ]; then
-    exit 0
-  fi
-
-else
-
-  # Read directly from the exported environment variable
   network_config="${NETWORKING_NETPLAN_CONFIG:-}"
 
   if [ -z "$network_config" ]; then
-    echo "No network config found in profile! Please set the NETWORKING_NETPLAN_CONFIG variable in your profile to a valid netplan config yaml string. Aborting."
+    echo "No network config found in profile."
+    echo "Please set NETWORKING_NETPLAN_CONFIG to a valid netplan YAML string."
     exit 1
-  else
-    echo "$network_config" >"$FILENAME"
   fi
-fi
 
-echo "Enabling systemd-networkd ..."
-enable_systemd_networkd
+  echo "$network_config" >"$FILENAME"
+}
 
-echo "Disabling NetworkManager ..."
-disable_network_manager
+main() {
+  install_netplan_if_missing
 
-echo "Copying netplan ..."
-sudo cp /tmp/01-netcfg.yaml /etc/netplan
-sudo chmod 600 /etc/netplan/01-netcfg.yaml
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    interactive_mode
+  else
+    non_interactive_mode
+  fi
 
-echo "Applying netplan ..."
-sudo netplan generate
-sudo netplan apply
+  copy_and_apply_netplan
+  exit 0
+}
 
-echo "Done"
-exit 0
+main "$@"
