@@ -269,7 +269,7 @@ main_interface_menu() {
     # Blank separator line
     menu_items+=(" " " ")
 
-    menu_items+=("Save/Apply" "Generate netplan and continue")
+    menu_items+=("Save" "Generate netplan and continue")
 
     local choice
     choice=$(whiptail --title "$TITLE" \
@@ -285,7 +285,7 @@ main_interface_menu() {
     case "$ret_val" in
     0)
       case "$choice" in
-      "Save/Apply")
+      "Save")
         generate_netplan
         return
         ;;
