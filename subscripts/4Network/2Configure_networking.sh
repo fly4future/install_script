@@ -95,6 +95,16 @@ get_default_gateway_for_interface() {
   fi
 }
 
+get_default_gateway_to_internet_for_interface() {
+  local int="$1"
+
+  if is_wifi_interface "$int"; then
+    echo "yes"
+  else
+    echo "no"
+  fi
+}
+
 get_default_ssid() {
   if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
     echo "f4f_robot"
@@ -115,6 +125,7 @@ init_interface_defaults() {
   CFG_ADDRESS["$int"]="$(get_default_ip_for_interface "$int")"
   CFG_PREFIX["$int"]="24"
   CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
+  CFG_GATEWAY_TO_INTERNET["$int"]="$(get_default_gateway_to_internet_for_interface "$int")"
   CFG_DNS["$int"]="8.8.8.8"
 
   if is_wifi_interface "$int"; then
@@ -141,7 +152,11 @@ interface_summary() {
   if [ "$dhcp" = "yes" ]; then
     echo "DHCP"
   else
-    echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
+    if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
+      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}, internet gateway"
+    else
+      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}, no internet gateway"
+    fi
   fi
 }
 
@@ -172,7 +187,16 @@ Choose option to edit:"
         menu_items+=(
           "Static address" "${CFG_ADDRESS[$int]}"
           "CIDR prefix" "${CFG_PREFIX[$int]}"
-          "Default gateway" "${CFG_GATEWAY[$int]}"
+          "Gateway to internet" "${CFG_GATEWAY_TO_INTERNET[$int]}"
+        )
+
+        if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
+          menu_items+=(
+            "Default gateway" "${CFG_GATEWAY[$int]}"
+          )
+        fi
+
+        menu_items+=(
           "DNS server" "${CFG_DNS[$int]}"
         )
       fi
@@ -187,7 +211,7 @@ Choose option to edit:"
 
     local choice
     choice=$(whiptail --title "$TITLE - $int" --ok-button "Edit" --cancel-button "Back" --menu "$menu_text" \
-      22 60 10 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+      22 70 12 "${menu_items[@]}" 3>&1 1>&2 2>&3)
     ret_val=$?
 
     case "$ret_val" in
@@ -238,6 +262,16 @@ Choose option to edit:"
       CFG_DHCP4["$int"]="no"
       ;;
 
+    "Gateway to internet")
+      yesno_def_yes "Should $int use a default gateway to the internet?"
+      if [ "$?" -eq 1 ]; then
+        CFG_GATEWAY_TO_INTERNET["$int"]="yes"
+      else
+        CFG_GATEWAY_TO_INTERNET["$int"]="no"
+      fi
+      CFG_DHCP4["$int"]="no"
+      ;;
+
     "Default gateway")
       CFG_GATEWAY["$int"]=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}")
       CFG_DHCP4["$int"]="no"
@@ -276,7 +310,7 @@ main_interface_menu() {
       --ok-button "Select" \
       --cancel-button "Cancel" \
       --menu "Select an interface to configure:" \
-      24 60 14 \
+      24 70 14 \
       "${menu_items[@]}" \
       3>&1 1>&2 2>&3)
 
@@ -290,7 +324,8 @@ main_interface_menu() {
         return
         ;;
 
-      " ")  # Blank separator line, ignore
+      " ")
+        # Blank separator line, ignore
         continue
         ;;
 
@@ -346,9 +381,17 @@ generate_netplan() {
         {
           echo "      addresses:"
           echo "        - ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
-          echo "      routes:"
-          echo "        - to: default"
-          echo "          via: ${CFG_GATEWAY[$int]}"
+        } >>"$FILENAME"
+
+        if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
+          {
+            echo "      routes:"
+            echo "        - to: default"
+            echo "          via: ${CFG_GATEWAY[$int]}"
+          } >>"$FILENAME"
+        fi
+
+        {
           echo "      nameservers:"
           echo "        addresses:"
           echo "          - ${CFG_DNS[$int]}"
@@ -374,9 +417,17 @@ generate_netplan() {
         {
           echo "      addresses:"
           echo "        - ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
-          echo "      routes:"
-          echo "        - to: default"
-          echo "          via: ${CFG_GATEWAY[$int]}"
+        } >>"$FILENAME"
+
+        if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
+          {
+            echo "      routes:"
+            echo "        - to: default"
+            echo "          via: ${CFG_GATEWAY[$int]}"
+          } >>"$FILENAME"
+        fi
+
+        {
           echo "      nameservers:"
           echo "        addresses:"
           echo "          - ${CFG_DNS[$int]}"
@@ -407,7 +458,7 @@ validate_basic_config() {
         errors="${errors}\n$int: missing CIDR prefix"
       fi
 
-      if [ -z "${CFG_GATEWAY[$int]}" ]; then
+      if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ] && [ -z "${CFG_GATEWAY[$int]}" ]; then
         errors="${errors}\n$int: missing gateway"
       fi
 
@@ -510,6 +561,7 @@ Do you want to continue?"
   declare -gA CFG_ADDRESS
   declare -gA CFG_PREFIX
   declare -gA CFG_GATEWAY
+  declare -gA CFG_GATEWAY_TO_INTERNET
   declare -gA CFG_DNS
   declare -gA CFG_SSID
   declare -gA CFG_PASSWORD
@@ -530,9 +582,9 @@ Do you want to continue?"
 
     yesno_def_yes "The following netplan was generated:
 
-  $netplan_preview
+$netplan_preview
 
-  Copy to /etc/netplan and apply?"
+Copy to /etc/netplan and apply?"
 
     if [ "$?" -eq 1 ]; then
       # User selected Yes
