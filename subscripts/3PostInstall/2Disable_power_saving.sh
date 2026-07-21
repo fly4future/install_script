@@ -15,6 +15,12 @@ function disable_wlan0_power_saving() {
     else
         echo "Disabling power saving mode on wlan0 interface"
 
+        # Check if the "iw" command is available, if not install it.
+        if ! command -v iw &>/dev/null; then
+            echo "iw command not found. Installing it."
+            sudo apt-get install -y iw
+        fi
+
         # Disable power saving mode on wlan0 interface.
         sudo iw wlan0 set power_save off
 
@@ -29,7 +35,7 @@ function disable_wlan0_power_saving() {
 
 function set_power_mode() {
 
-    # Most times the power modes available are "performance", "balanced" and "power-saver", 
+    # Most times the power modes available are "performance", "balanced" and "power-saver",
     # but sometimes some are missing (for example on Jetsons only power-saver" and "balanced" are available)
     # For this reason we check which modes are available and set the highest one available.
     if powerprofilesctl list | grep -q "performance"; then
@@ -53,7 +59,7 @@ disable_wlan0_power_saving
 set_power_mode
 
 # This should be last because it will ask for reboot, which will stop the script from running any further.
-if grep -q "NVIDIA Jetson" /proc/device-tree/model > /dev/null 2>&1; then
+if grep -q "NVIDIA Jetson" /proc/device-tree/model >/dev/null 2>&1; then
     set_jetson_power_mode
 fi
 
