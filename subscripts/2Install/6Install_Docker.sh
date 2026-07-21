@@ -4,7 +4,8 @@
 # Instructions for installing and configuring Nvidia Container Toolkit: https://docs.nvidia.com/jetson/orin-nano-devkit/user-guide/latest/setup_docker.html
 # Note that the instructions for the toolkit are wrong. The correct package to install is nvidia-container-toolkit, not nvidia-container, see https://github.com/fly4future/install_script/pull/18 for more info.
 
-sudo apt-get update
+set -e
+
 sudo apt-get install -y ca-certificates curl
 
 # Check if we're running on an NVIDIA Jetson device.
