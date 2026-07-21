@@ -138,7 +138,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      routes:" >>/tmp/01-netcfg.yaml
         echo "        - to: default" >>/tmp/01-netcfg.yaml
         echo "          via: $gateway" >>/tmp/01-netcfg.yaml
-        echo "          metric: 100" >>/tmp/01-netcfg.yaml
+        echo "          metric: 200" >>/tmp/01-netcfg.yaml
 
         dns=$(input_box "Enter your DNS server address for $int:" "8.8.8.8")
         echo "      nameservers:" >>/tmp/01-netcfg.yaml
@@ -182,7 +182,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
         echo "      routes:" >>/tmp/01-netcfg.yaml
         echo "        - to: default" >>/tmp/01-netcfg.yaml
         echo "          via: $gateway" >>/tmp/01-netcfg.yaml
-        echo "          metric: 200" >>/tmp/01-netcfg.yaml
+        echo "          metric: 100" >>/tmp/01-netcfg.yaml
       fi
 
       ap_name=""
@@ -228,21 +228,19 @@ else
   fi
 fi
 
-# First ensure systemd-networkd is enabled and running
 echo "Enabling systemd-networkd ..."
 enable_systemd_networkd
 
-# Then apply the netplan config
+echo "Disabling NetworkManager ..."
+disable_network_manager
+
 echo "Copying netplan ..."
 sudo cp /tmp/01-netcfg.yaml /etc/netplan
 sudo chmod 600 /etc/netplan/01-netcfg.yaml
+
 echo "Applying netplan ..."
 sudo netplan generate
 sudo netplan apply
-
-# Finally, disable network manager
-echo "Disabling NetworkManager ..."
-disable_network_manager
 
 echo "Done"
 exit 0

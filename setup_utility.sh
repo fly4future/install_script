@@ -89,11 +89,9 @@ folder_path=""
 first_run=true
 if [ -z "$1" ]; then
   folder_path="$DIR/subscripts"
-  sudo chmod -R +x "$DIR/subscripts"
-  sudo chmod -R -x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
-  sudo chmod +x "$DIR/subscripts/5Udev_rules/DISREGARD_udev_rules"
-  sudo chmod -R -x "$DIR/subscripts/3PostInstall/DISREGARD"
-  sudo chmod +x "$DIR/subscripts/3PostInstall/DISREGARD"
+
+  # Make all .sh files in the subscripts folder executable
+  find "$folder_path" -type f -name "*.sh" -exec chmod +x {} \;
 else
   folder_path="$1"
   first_run=false
