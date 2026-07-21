@@ -117,6 +117,10 @@ get_default_wifi_password() {
   echo "mikrokopter"
 }
 
+delete_old_netplan_configs() {
+  sudo rm -f /etc/netplan/*.yaml
+}
+
 init_interface_defaults() {
   local int="$1"
 
@@ -303,7 +307,8 @@ main_interface_menu() {
     # Blank separator line
     menu_items+=(" " " ")
 
-    menu_items+=("Save" "Generate netplan and continue")
+    menu_items+=("Cleanup" "Delete old netplan configs")
+    menu_items+=("Save" "Generate netplan config and continue")
 
     local choice
     choice=$(whiptail --title "$TITLE" \
@@ -321,6 +326,10 @@ main_interface_menu() {
       case "$choice" in
       "Save")
         generate_netplan
+        return
+        ;;
+      "Cleanup")
+        delete_old_netplan_configs
         return
         ;;
 
@@ -534,12 +543,6 @@ copy_and_apply_netplan() {
 }
 
 interactive_mode() {
-  yesno_def_yes "Delete all previous netplan configs? Recommended."
-
-  if [ "$?" -eq 1 ]; then
-    sudo rm -f /etc/netplan/*.yaml
-  fi
-
   detect_interfaces
 
   declare -gA CFG_TYPE
