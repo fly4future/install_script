@@ -534,19 +534,6 @@ copy_and_apply_netplan() {
 }
 
 interactive_mode() {
-  yesno_def_yes "This script will configure networking on the device.
-
-systemd-networkd will be used as the backend for netplan and NetworkManager will be disabled.
-
-If you are connected via SSH, you may lose connection when applying.
-
-Do you want to continue?"
-
-  if [ "$?" -eq 0 ]; then
-    echo "Aborting network config..."
-    exit 0
-  fi
-
   yesno_def_yes "Delete all previous netplan configs? Recommended."
 
   if [ "$?" -eq 1 ]; then
