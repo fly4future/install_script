@@ -9,17 +9,37 @@ set -e
 sudo apt-get install -y ca-certificates curl
 
 # Check if we're running on an NVIDIA Jetson device.
-if grep -q "NVIDIA Jetson" /proc/device-tree/model > /dev/null 2>&1; then
+IS_JETSON=false
+if grep -q "NVIDIA Jetson" /proc/device-tree/model >/dev/null 2>&1; then
+    IS_JETSON=true
+fi
+
+# Install Jetson dependencies if needed
+if [ "$IS_JETSON" = true ]; then
+    echo "Installing NVIDIA Container Toolkit..."
     sudo apt-get install -y nvidia-container-toolkit jq
 fi
 
-# Add Docker's official GPG key:
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+# Check whether Docker is already installed
+if command -v docker >/dev/null 2>&1; then
+    echo "Docker is already installed:"
+    docker --version
+    DOCKER_ALREADY_INSTALLED=true
+else
+    DOCKER_ALREADY_INSTALLED=false
+fi
 
-# Add the repository to Apt sources:
-sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+# Install Docker only if not already present
+if [ "$DOCKER_ALREADY_INSTALLED" = false ]; then
+    echo "Installing Docker..."
+
+    # Add Docker's official GPG key
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+    # Add Docker repository
+    sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
 Types: deb
 URIs: https://download.docker.com/linux/ubuntu
 Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
@@ -28,11 +48,16 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo systemctl enable --now docker
+    sudo apt-get update
 
-if grep -q "NVIDIA Jetson" /proc/device-tree/model > /dev/null 2>&1; then
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    sudo systemctl enable --now docker
+
+    echo "Docker successfully installed."
+fi
+
+if [ "$IS_JETSON" = true ]; then
     echo "Configuring Docker to use NVIDIA Container Toolkit as the default runtime..."
     sudo nvidia-ctk runtime configure --runtime=docker
     sudo systemctl daemon-reload
@@ -42,6 +67,7 @@ if grep -q "NVIDIA Jetson" /proc/device-tree/model > /dev/null 2>&1; then
     sudo mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json
     sudo systemctl restart docker
 
+fi
 
 # Add current user to docker group if not already a member
 if ! groups "$USER" | grep -qw docker; then
