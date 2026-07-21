@@ -43,7 +43,7 @@ input_box() {
   fi
 }
 
-error_msg() {
+msgbox() {
   whiptail --title "$TITLE" --msgbox "$1" 0 0
 }
 
@@ -488,7 +488,7 @@ validate_basic_config() {
   done
 
   if [ -n "$errors" ]; then
-    error_msg "Configuration errors:$errors"
+    msgbox "Configuration errors:$errors"
     return 1
   fi
 
@@ -512,7 +512,7 @@ detect_interfaces() {
   done < <(ls /sys/class/net)
 
   if [ "${#INTERFACES[@]}" -eq 0 ]; then
-    error_msg "No ethX or wlanX network interfaces found.
+    msgbox "No ethX or wlanX network interfaces found.
 
 Your interfaces may have different names, for example:
 enp3s0, ens33, wlp2s0
