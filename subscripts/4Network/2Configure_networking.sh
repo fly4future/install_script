@@ -574,7 +574,7 @@ interactive_mode() {
 
 $netplan_preview
 
-Copy to /etc/netplan and apply?"
+Save to /etc/netplan/01-netcfg.yaml and apply?"
 
     if [ "$?" -eq 1 ]; then
       # User selected Yes
