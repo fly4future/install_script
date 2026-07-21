@@ -119,6 +119,7 @@ get_default_wifi_password() {
 
 delete_old_netplan_configs() {
   sudo rm -f /etc/netplan/*.yaml
+  msgbox "Deleted all yaml files in /etc/netplan/"
 }
 
 init_interface_defaults() {
@@ -330,7 +331,6 @@ main_interface_menu() {
         ;;
       "Cleanup")
         delete_old_netplan_configs
-        return
         ;;
 
       " ")
