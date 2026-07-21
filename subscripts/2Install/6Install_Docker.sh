@@ -41,13 +41,22 @@ if grep -q "NVIDIA Jetson" /proc/device-tree/model > /dev/null 2>&1; then
     sudo jq '. + {"default-runtime": "nvidia"}' /etc/docker/daemon.json | sudo tee /etc/docker/daemon.json.tmp
     sudo mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json
     sudo systemctl restart docker
+
+
+# Add current user to docker group if not already a member
+if ! groups "$USER" | grep -qw docker; then
+    echo "Adding $USER to docker group..."
+    sudo usermod -aG docker "$USER"
+else
+    echo "$USER is already in the docker group."
 fi
 
-echo "Add user $USER to docker group"
-sudo usermod -aG docker $USER
+echo
+echo "Installation complete."
+echo
 
-echo ""
-echo "Docker installation complete. Please log out and log back in to apply the changes to your group and be able to use the docker command without sudo."
-echo ""
+if ! groups "$USER" | grep -qw docker; then
+    echo "Please log out and log back in for docker group membership to take effect."
+fi
 
 exit 0
