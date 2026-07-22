@@ -95,6 +95,16 @@ get_default_gateway_for_interface() {
   fi
 }
 
+get_metric_for_interface() {
+  local int="$1"
+
+  if is_wifi_interface "$int"; then
+    echo "100"
+  else
+    echo "200"
+  fi
+}
+
 get_default_gateway_to_internet_for_interface() {
   local int="$1"
 
@@ -129,8 +139,9 @@ init_interface_defaults() {
   CFG_DHCP4["$int"]="yes"
   CFG_ADDRESS["$int"]="$(get_default_ip_for_interface "$int")"
   CFG_PREFIX["$int"]="24"
-  CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
   CFG_GATEWAY_TO_INTERNET["$int"]="$(get_default_gateway_to_internet_for_interface "$int")"
+  CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
+  CFG_METRIC["$int"]="$(get_metric_for_interface "$int")"
   CFG_DNS["$int"]="8.8.8.8"
 
   if is_wifi_interface "$int"; then
@@ -158,9 +169,9 @@ interface_summary() {
     echo "DHCP"
   else
     if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
-      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}, internet gateway"
+      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]} metric ${CFG_METRIC[$int]}"
     else
-      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}, no internet gateway"
+      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
     fi
   fi
 }
@@ -196,9 +207,8 @@ Choose option to edit:"
         )
 
         if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
-          menu_items+=(
-            "Default gateway" "${CFG_GATEWAY[$int]}"
-          )
+          menu_items+=("Default gateway" "${CFG_GATEWAY[$int]}")
+          menu_items+=("Metric" "${CFG_METRIC[$int]}")
         fi
 
         menu_items+=(
@@ -259,12 +269,10 @@ Choose option to edit:"
 
     "Static address")
       CFG_ADDRESS["$int"]=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}")
-      CFG_DHCP4["$int"]="no"
       ;;
 
     "CIDR prefix")
       CFG_PREFIX["$int"]=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}")
-      CFG_DHCP4["$int"]="no"
       ;;
 
     "Gateway to internet")
@@ -274,12 +282,14 @@ Choose option to edit:"
       else
         CFG_GATEWAY_TO_INTERNET["$int"]="no"
       fi
-      CFG_DHCP4["$int"]="no"
       ;;
 
     "Default gateway")
       CFG_GATEWAY["$int"]=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}")
-      CFG_DHCP4["$int"]="no"
+      ;;
+
+    "Metric")
+      CFG_METRIC["$int"]=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}")
       ;;
 
     "DNS server")
@@ -397,6 +407,7 @@ generate_netplan() {
             echo "      routes:"
             echo "        - to: default"
             echo "          via: ${CFG_GATEWAY[$int]}"
+            echo "          metric: ${CFG_METRIC[$int]}"
           } >>"$FILENAME"
         fi
 
@@ -433,6 +444,7 @@ generate_netplan() {
             echo "      routes:"
             echo "        - to: default"
             echo "          via: ${CFG_GATEWAY[$int]}"
+            echo "          metric: ${CFG_METRIC[$int]}"
           } >>"$FILENAME"
         fi
 
@@ -469,6 +481,10 @@ validate_basic_config() {
 
       if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ] && [ -z "${CFG_GATEWAY[$int]}" ]; then
         errors="${errors}\n$int: missing gateway"
+      fi
+
+      if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ] && [ -z "${CFG_METRIC[$int]}" ]; then
+        errors="${errors}\n$int: missing metric"
       fi
 
       if [ -z "${CFG_DNS[$int]}" ]; then
@@ -550,8 +566,9 @@ interactive_mode() {
   declare -gA CFG_DHCP4
   declare -gA CFG_ADDRESS
   declare -gA CFG_PREFIX
-  declare -gA CFG_GATEWAY
   declare -gA CFG_GATEWAY_TO_INTERNET
+  declare -gA CFG_GATEWAY
+  declare -gA CFG_METRIC
   declare -gA CFG_DNS
   declare -gA CFG_SSID
   declare -gA CFG_PASSWORD
