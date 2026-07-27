@@ -1,4 +1,35 @@
-# Install-script
+# Install script
+
+This repository contains scripts for flashing and configuring computers for use in F4F/MRS.
+
+## Configuration utility
+
+Use these scripts directly on the host that you want to configure.
+
+### Interactive configuration utility
+
+- Run the script with "setup_utility.sh" in the root directory of the repository.
+- The menu items will be automatically generated from the `subscripts` folder
+- Scripts and folders will appear in the menu as items or folders.
+- You can easily add new functionality by putting new scripts into the subscripts folder. See examples of menus in the `examples_whiptail` folder.
+
+### Non-interactive configuration utility
+
+Use `auto_setup_utility.sh` to run setup non-interactively from a profile file, which contains all the necessary information and toggles for the configuration. This is useful for automating the setup process or for running it on multiple devices with the same configuration.
+
+  ```sh
+  ./auto_setup_utility.sh profiles/sample.conf
+  ```
+
+Profile files are located in `profiles/` directly. They contain a list of toggles and variables for guiding the configuration.
+A new profile can be created by copying and modifying the `sample.conf` file as needed.
+
+Note that not all functionality of the manual setup utilities is available in the non-interactive version. Most notably:
+
+- Switching from `networkd` back to `NetworkManager`, since it is only there for debugging purposes
+- Installation and uninstallation of ROS without docker (directly with `apt`). This can be implemented in the future.
+- MRS internal only configuration. Can be implemented in the future.
+- Disregarded scripts
 
 ## Flashing Jetson devices
 
@@ -19,28 +50,3 @@ In case you change your mind you can always delete the entire directory.
 The size of this directory is about 75 GB.
 
 After the script completes, you can continue configuration on the Jetson device by cloning this repository and running the `setup_utility.sh` script.
-
-## Configuration utility
-
-- Run the script with "setup_utility.sh" in the root directory of the repository.
-- The menu items will be automatically generated from the `subscripts` folder
-- Scripts and folders will appear in the menu as items or folders.
-- You can easily add new functionality by putting new scripts into the subscripts folder. See examples of menus in the `examples_whiptail` folder.
-
-## Non-interactive configuration
-
-Use `setup_utility_auto.sh` to run setup non-interactively from a profile file, which contains all the necessary information and toggles for the configuration. This is useful for automating the setup process or for running it on multiple devices with the same configuration.
-
-  ```sh
-  ./setup_utility_auto.sh profiles/sample.conf
-  ```
-
-Profile files are located in `profiles/` directly. They contain a list of toggles and variables for guiding the configuration.
-A new profile can be created by copying and modifying the `sample.conf` file as needed.
-
-Note that not all functionality of the manual setup utilities is available in the non-interactive version. Most notably:
-
-- Switching from `networkd` back to `NetworkManager`, since it is only there for debugging purposes
-- Installation and uninstallation of ROS without docker (directly with `apt`). This can be implemented in the future.
-- MRS internal only configuration. Can be implemented in the future.
-- Disregarded scripts
