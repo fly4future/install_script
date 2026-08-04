@@ -179,7 +179,6 @@ main() {
     run_step "RUN_SET_SWAP_16GB" "Set swap to 16GB" "$DIR/subscripts/3PostInstall/4Set_Swap_to_16GB.sh" || exit 1
 
     run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
-    run_step "RUN_CONFIGURE_NETWORKING" "Configure networking" "$DIR/subscripts/4Network/2Configure_networking.sh" "${TARGET_VARIANT:-}" || exit 1
 
     log "Done."
 }
