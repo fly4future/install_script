@@ -212,7 +212,7 @@ if [ "$write_mode" = "new" ]; then
   sudo mv "$tmp_file" "$target_file"
 else
   # If the user chose to append to an existing file, we need to concatenate the temp file with the existing file and write the result to the target location
-  cat "$tmp_file" >>"$target_file"
+  sudo tee -a "$target_file" < "$tmp_file" >/dev/null
   rm "$tmp_file"
 fi
 
