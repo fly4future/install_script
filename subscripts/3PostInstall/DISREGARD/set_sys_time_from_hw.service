@@ -1,0 +1,10 @@
+[Unit]
+Description=Synchronize system clock from RTC when booting
+Before=time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/hwclock --hctosys
+
+[Install]
+WantedBy=sysinit.target
