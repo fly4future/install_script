@@ -1,0 +1,10 @@
+[Unit]
+Description=Write system time to RTC after time sync with NTP
+After=network-online.target time-sync.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/hwclock --systohc
+
+[Install]
+WantedBy=multi-user.target
