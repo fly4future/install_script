@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 OPTIONS=(
   1 "Use stable ppa (recommended)"
   2 "Use unstable ppa"

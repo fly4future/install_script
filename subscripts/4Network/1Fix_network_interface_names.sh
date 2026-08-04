@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 if [[ -f /etc/default/grub ]]; then
   # Device is using GRUB (e.g. Intel NUC)

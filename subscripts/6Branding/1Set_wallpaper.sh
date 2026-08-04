@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 script_dir="$(dirname "$(realpath "$0")")"
 folder_path="$script_dir/DISREGARD/wallpapers"
 

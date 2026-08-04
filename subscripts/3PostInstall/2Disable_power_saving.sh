@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 function disable_hibernation() {
     echo "Disabling hibernation"
     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target

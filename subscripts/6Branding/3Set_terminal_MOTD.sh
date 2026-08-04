@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 sudo chmod -x /etc/update-motd.d/10-help-text
 sudo chmod -x /etc/update-motd.d/60-unminimize
 sudo chmod -x /etc/update-motd.d/90-updates-available

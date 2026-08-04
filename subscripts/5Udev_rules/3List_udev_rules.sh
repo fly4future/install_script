@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 source "$(dirname "$0")/DISREGARD_common/udev_rules_common.sh"
 
 target_file=$(list_existing_udev_rules_file)

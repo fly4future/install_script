@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 add_to_bashrc () { #arg1 - what should we look for in .bashrc; arg2 - what should we put in bashrc if we did not find arg1
   if grep --quiet "$1" ~/.bashrc; then
     echo "$1 found in .bashrc"

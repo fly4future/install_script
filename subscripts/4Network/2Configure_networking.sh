@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 yesno_def_no() {
   whiptail --title "Network Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
   ret_val=$?
