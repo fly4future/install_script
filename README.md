@@ -22,10 +22,7 @@ After the script completes, you can continue configuration on the Jetson device 
 
 ## Configuration utility
 
-- Run the script with "setup_utility.sh" in the root directory of the repository.
-- The menu items will be automatically generated from the `subscripts` folder
-- Scripts and folders will appear in the menu as items or folders.
-- You can easily add new functionality by putting new scripts into the subscripts folder. See examples of menus in the `examples_whiptail` folder.
+Clone this repository to the device you want to configure and run the setup utility script using `./setup_utility.sh`.
 
 ## Non-interactive configuration
 
@@ -44,3 +41,19 @@ Note that not all functionality of the manual setup utilities is available in th
 - Installation and uninstallation of ROS without docker (directly with `apt`). This can be implemented in the future.
 - MRS internal only configuration. Can be implemented in the future.
 - Disregarded scripts
+
+## Development instructions
+
+### Adding new scripts
+
+The interactive wizard automatically detects `.sh` scripts in the `subscripts/` directory and it's subdirectories. To add a new script, simply place it in the appropriate directory and ensure it has execute permissions (`chmod +x script.sh`).
+
+The wizard entry for the script is based on the script's filename. Underscores are replace with spaces.
+If you don't want a script (or other file) to be detected by the wizard, put it into a subdirectory that includes `DISREGARD` in its name. The wizard will ignore all files in such directories.
+
+When writing the scripts do the following:
+
+- use `set -euo pipefail` at the top of the script to ensure that it exits on errors, unset variables, and failed pipes
+- check whether the commands you are using are available on the system, and if not, install them
+- if you want to script to be used non-interactively, you should check if `NON_INTERACTIVE_MODE=1`, and if so provide a way for the script to execute without using `whiptail`, `read`, or other interactive commands
+- return `0` on success and `1` on failure. Note that if you print some output on the console the user might not see it. Use `read -p "Press enter to continue"` to pause the script and allow the user to read the output before continuing, but make sure to check for `NON_INTERACTIVE_MODE=1` and skip the pause in that case.
