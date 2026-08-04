@@ -131,7 +131,9 @@ main() {
       else
         ${FULL_FILEPATHS[$((choice - 1))]}
       fi
-      if [ $? -eq 0 ]; then
+
+      if [ $? -ne 0 ]; then
+        # If the exit status is not 0, then there was an error, stop the wizard and wait for user input before continuing
         read -p "${blink}${bold}Hit enter to continue ...${normal}"
       fi
     else
