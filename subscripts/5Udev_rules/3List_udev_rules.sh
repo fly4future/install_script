@@ -11,4 +11,4 @@ fi
 
 msg_box "File: $target_file\nContents:\n$(cat "$target_file")"
 
-exit 1 # Exit 1 so that we go back to the udev menu instead of the main menu
+exit 0

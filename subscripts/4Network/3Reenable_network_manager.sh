@@ -32,10 +32,7 @@ elif [ $ret_val -eq 1 ]; then
 
   echo "Network manager enabled"
   exit 0
-elif [ $ret_val -eq 0 ]; then
-  exit 1
 else
-  echo "Error state"
-  exit 0
+  exit 1
 fi
 

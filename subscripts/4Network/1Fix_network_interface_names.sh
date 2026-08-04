@@ -3,17 +3,17 @@
 set -euo pipefail
 
 if [[ -f /etc/default/grub ]]; then
-  # Device is using GRUB (e.g. Intel NUC)
-  if ! grep -q 'net\.ifnames=0' /etc/default/grub; then
-    sudo sed -i 's/^\(GRUB_CMDLINE_LINUX="[^"]*\)"/\1 net.ifnames=0"/' /etc/default/grub
-  fi
-  if ! grep -q 'biosdevname=0' /etc/default/grub; then
-    sudo sed -i 's/^\(GRUB_CMDLINE_LINUX="[^"]*\)"/\1 biosdevname=0"/' /etc/default/grub
-  fi
-  sudo update-grub
+	# Device is using GRUB (e.g. Intel NUC)
+	if ! grep -q 'net\.ifnames=0' /etc/default/grub; then
+		sudo sed -i 's/^\(GRUB_CMDLINE_LINUX="[^"]*\)"/\1 net.ifnames=0"/' /etc/default/grub
+	fi
+	if ! grep -q 'biosdevname=0' /etc/default/grub; then
+		sudo sed -i 's/^\(GRUB_CMDLINE_LINUX="[^"]*\)"/\1 biosdevname=0"/' /etc/default/grub
+	fi
+	sudo update-grub
 elif [[ -f /boot/extlinux/extlinux.conf ]]; then
-    # Device is using extlinux (e.g. NVIDIA Jetson)
-    echo "Creating backup of extlinux.conf at /boot/extlinux/extlinux.conf.bak"
+	# Device is using extlinux (e.g. NVIDIA Jetson)
+	echo "Creating backup of extlinux.conf at /boot/extlinux/extlinux.conf.bak"
 	sudo cp /boot/extlinux/extlinux.conf /boot/extlinux/extlinux.conf.bak
 	if grep -q '^[[:space:]]*APPEND .*net\.ifnames=' /boot/extlinux/extlinux.conf; then
 		sudo sed -i '/^[[:space:]]*APPEND / s/net\.ifnames=[^[:space:]]*/net.ifnames=0/g' /boot/extlinux/extlinux.conf
@@ -31,12 +31,23 @@ else
 	exit 1
 fi
 
-whiptail --title "Fix network interface names" --yesno "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now?" --defaultno 0 0
-ret_val=$?
+if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+	whiptail --title "Fix network interface names" --yesno "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now?" --defaultno 0 0
+	ret_val=$?
 
-if [ $ret_val -eq 0 ]; then
-	sudo reboot
+	if [ $ret_val -eq 0 ]; then
+		sudo reboot
+	else
+		whiptail --title "Fix network interface names" --msgbox "Please reboot the system as soon as possible to apply the changes.\nNetwork configuration will not work correctly until then (wrong interface names)" 0 0
+		exit 1
+	fi
 else
-	whiptail --title "Fix network interface names" --msgbox "Please reboot the system as soon as possible to apply the changes.\nNetwork configuration will not work correctly until then (wrong interface names)" 0 0
-	exit 1
+	read -p "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now? (y/n): " answer
+	if [[ "$answer" =~ ^[Yy]$ ]]; then
+		sudo reboot
+	else
+		echo "Please reboot the system as soon as possible to apply the changes."
+		echo "Network configuration will not work correctly until then (wrong interface names)"
+		exit 1
+	fi
 fi

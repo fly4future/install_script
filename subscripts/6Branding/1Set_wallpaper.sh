@@ -35,5 +35,4 @@ sudo cp "$local_wallpaper_path" "$system_wallpaper_path"
 gsettings set org.gnome.desktop.background picture-uri "file://$system_wallpaper_path"       # Light mode
 gsettings set org.gnome.desktop.background picture-uri-dark "file://$system_wallpaper_path"  # Dark mode
 
-# Exit 1 will not show the "Press enter to continue" menu but rather go straight back to the main menu
-exit 1
+exit 0

@@ -22,4 +22,4 @@ sudo rm "$target_file"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
-exit 1 # Exit 1 so that we go back to the udev menu instead of the main menu
+exit 0
