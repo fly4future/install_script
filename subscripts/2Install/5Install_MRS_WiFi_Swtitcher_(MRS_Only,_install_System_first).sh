@@ -1,5 +1,4 @@
 #!/bin/bash
 
-# sudo apt update 
-sudo apt -y install mrs-uav-usb-configurator
+sudo apt-get -y install mrs-uav-usb-configurator
 exit 0

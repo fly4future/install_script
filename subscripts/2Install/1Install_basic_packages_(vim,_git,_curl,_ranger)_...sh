@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# sudo apt update 
-sudo apt -y install vim nano ranger net-tools openssh-server curl git netplan.io # install some basic programs
+sudo apt-get -y install vim nano ranger net-tools openssh-server curl git netplan.io
+
 exit 0

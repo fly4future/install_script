@@ -181,12 +181,12 @@ if [ "$first_run" = true ]; then
       if [ $((now - last_update)) -lt 3600 ]; then
         echo "Apt update was already successfully ran in the last 60 minutes, not running it again"
       else
-        sudo apt update
+        sudo apt-get update
       fi
     fi
     if ! command -v git &>/dev/null; then
       echo "Git is not installed. Installing git..."
-      sudo apt install git
+      sudo apt-get install -y git
     fi
 
     if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -206,7 +206,7 @@ if [ "$first_run" = true ]; then
 
   if [ ! -z "$whiptail_installed" ]; then
     echo "Whiptail NOT installed, will install now:"
-    sudo apt install whiptail
+    sudo apt-get install -y whiptail
   fi
 
   # Ask whether the user wants to use F4F or MRS defaults

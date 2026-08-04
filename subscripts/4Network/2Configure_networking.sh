@@ -71,7 +71,7 @@ disable_network_manager() {
 # If netplan is not installed, install it
 if ! command -v netplan &>/dev/null; then
   echo "Netplan not found, installing..."
-  sudo apt update && sudo apt install -y netplan.io
+  sudo apt-get update && sudo apt-get install -y netplan.io
 fi
 
 if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then

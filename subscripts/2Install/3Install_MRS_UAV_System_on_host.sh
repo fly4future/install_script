@@ -26,12 +26,12 @@ main() {
           1)
             echo "Using stable ppa"
             curl https://ctu-mrs.github.io/ppa2-stable/add_ppa.sh | bash # add the ros jazzy ppa and install the system 
-            sudo apt -y install ros-jazzy-mrs-uav-system-full
+            sudo apt-get -y install ros-jazzy-mrs-uav-system-full
             ;;
           2)
             echo "Using unstable ppa"
             curl https://ctu-mrs.github.io/ppa2-unstable/add_ppa.sh | bash # add the mrs_uav_system ppa and install the system
-            sudo apt -y install ros-noetic-mrs-uav-system-full
+            sudo apt-get -y install ros-noetic-mrs-uav-system-full
             ;;
           *)
             exit 1

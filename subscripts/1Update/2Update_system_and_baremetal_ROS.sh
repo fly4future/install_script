@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt -y update && rosdep update && sudo apt -y upgrade --with-new-pkgs --allow-downgrades
+sudo apt-get -y update && rosdep update && sudo apt-get -y upgrade --with-new-pkgs --allow-downgrades
 
 source ~/.bashrc
 
