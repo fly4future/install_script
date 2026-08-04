@@ -84,7 +84,7 @@ choose_mrs_board() {
 }
 
 configure_connected_devices() {
-  # List devices that the user might be interesting in adding udev rules for
+  # List devices that the user might be interested in adding udev rules for
   devices=$(ls /dev | grep -e ttyUSB -e ttyACM -e ttyTHS)
 
   if [ -z "$devices" ]; then
@@ -97,9 +97,6 @@ configure_connected_devices() {
   # Loop over found devices and prompt user whether they want to add a udev rule
   for device in $devices; do
     device_info=$(get_device_info "$device")
-    idVendor=$(get_udev_value "$device" "ID_VENDOR_ID")
-    idProduct=$(get_udev_value "$device" "ID_MODEL_ID")
-    Serial=$(get_udev_value "$device" "ID_SERIAL_SHORT")
 
     yesno_def_yes "Do you want to add a udev rule for this device? $device:\n$device_info"
     ret_val=$?
@@ -114,11 +111,24 @@ configure_connected_devices() {
       continue
     fi
 
-    rule_line="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
-    if [ -n "$Serial" ]; then
-      rule_line="$rule_line, ATTRS{serial}==\"$Serial\""
+    # Check if this is a native UART or a USB device
+    if udevadm info -q property -n "/dev/$device" | grep -qx "ID_BUS=usb"; then
+      # USB device
+      idVendor=$(get_udev_value "$device" "ID_VENDOR_ID")
+      idProduct=$(get_udev_value "$device" "ID_MODEL_ID")
+      Serial=$(get_udev_value "$device" "ID_SERIAL_SHORT")
+
+      rule_line="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
+
+      if [ -n "$Serial" ]; then
+        rule_line="$rule_line, ATTRS{serial}==\"$Serial\""
+      fi
+
+      rule_line="$rule_line, SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
+    else
+      # Native UART
+      rule_line="KERNEL==\"$device\", SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
     fi
-    rule_line="$rule_line, SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
 
     generated_rules+="$rule_line"$'\n'
   done
