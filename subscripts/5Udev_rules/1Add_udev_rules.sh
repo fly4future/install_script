@@ -94,8 +94,7 @@ configure_connected_devices() {
 
   generated_rules=""
 
-  # Loop over found devices and for each prompt user whether they want to add a udev rule for that device.
-  # If they do, ask what they want to name the symlink for that device and then write the corresponding udev rule to target file
+  # Loop over found devices and prompt user whether they want to add a udev rule
   for device in $devices; do
     device_info=$(get_device_info "$device")
     idVendor=$(get_udev_value "$device" "ID_VENDOR_ID")
@@ -105,7 +104,7 @@ configure_connected_devices() {
     yesno_def_yes "Do you want to add a udev rule for this device? $device:\n$device_info"
     ret_val=$?
 
-    # skip unless user answered Yes (return code 0)
+    # Skip unless user answered Yes (return code 0)
     if [ $ret_val -ne 0 ]; then
       continue
     fi
