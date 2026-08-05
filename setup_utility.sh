@@ -133,7 +133,7 @@ main() {
         # Check the exit status of the script that was run
         if [ $? -ne 0 ]; then
           # If the exit status is not 0, then there was an error, stop the wizard and wait for user input before continuing
-          read -p "${blink}${bold}Hit enter to continue ...${normal}"
+          read -p "${blink}${bold}Press enter to continue ...${normal}"
         fi
       fi
 
@@ -201,7 +201,7 @@ if [ "$first_run" = true ]; then
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"
     echo -e "${red}${bold}You will not be to install/update any new software!${normal}"
     echo -e "${red}${bold}You can however still use some of the configuration scripts${normal}"
-    read -p "${blink}${bold}Hit enter to continue ...${normal}"
+    read -p "${blink}${bold}Press enter to continue ...${normal}"
   fi
 
   # Check for whiptail
