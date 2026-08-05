@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eo pipefail
 
 add_to_bashrc () { #arg1 - what should we look for in .bashrc; arg2 - what should we put in bashrc if we did not find arg1
   if grep --quiet "$1" ~/.bashrc; then
@@ -18,21 +18,11 @@ CHOICES=(
 )
 
 
-WORKSPACE_NAME=$(whiptail --inputbox "$3\n What should be your workspace name?" 0 0 "workspace" --title "ROS2 workspace setup" --cancel-button "Cancel"  3>&1 1>&2 2>&3)
+WORKSPACE_NAME=$(whiptail --inputbox "What should be your workspace name?" 0 0 "workspace" --title "ROS2 workspace setup" --cancel-button "Cancel"  3>&1 1>&2 2>&3)
 
 ret_val=$?
-if [ $ret_val -eq 255 ]; then
-  # User hit Escape
+if [ $ret_val -ne 0 ]; then
   exit 1
-elif [ $ret_val -eq 1 ]; then
-  # User hit Cancel
-  exit 1
-elif [ $ret_val -eq 0 ]; then
-  # valid input
-  return 0
-else
-  echo "Error state"
-  exit 0
 fi
 
 # Pass choices variable to whiptail
