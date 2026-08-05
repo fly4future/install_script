@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 add_var_to_bashrc () {
   #arg1 - what should we look for in .bashrc
   #arg2 - what is the default value for the parameter

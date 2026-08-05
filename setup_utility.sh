@@ -122,20 +122,21 @@ main() {
     choice=$(show_main_menu)
 
     if [ $? -eq 0 ]; then
-      echo ${FULL_FILEPATHS[$((choice - 1))]}
-      # ${FULL_FILEPATHS[$((choice - 1))]}
 
       if [[ -d ${FULL_FILEPATHS[$((choice - 1))]} ]]; then
-        echo "is a directory"
-        ./$0 ${FULL_FILEPATHS[$((choice - 1))]} #Run this script again but in the selected folder
+        ./$0 ${FULL_FILEPATHS[$((choice - 1))]} # Run this script again but in the selected folder
       else
         ${FULL_FILEPATHS[$((choice - 1))]}
+
+        # Check the exit status of the script that was run
+        if [ $? -ne 0 ]; then
+          # If the exit status is not 0, then there was an error, stop the wizard and wait for user input before continuing
+          read -p "${blink}${bold}Hit enter to continue ...${normal}"
+        fi
       fi
-      if [ $? -eq 0 ]; then
-        read -p "${blink}${bold}Hit enter to continue ...${normal}"
-      fi
+
     else
-      # echo "Menu canceled."
+      # If the user pressed Cancel or Esc, exit the script
       exit 1
     fi
   done
@@ -181,12 +182,12 @@ if [ "$first_run" = true ]; then
       if [ $((now - last_update)) -lt 3600 ]; then
         echo "Apt update was already successfully ran in the last 60 minutes, not running it again"
       else
-        sudo apt update
+        sudo apt-get update
       fi
     fi
     if ! command -v git &>/dev/null; then
       echo "Git is not installed. Installing git..."
-      sudo apt install git
+      sudo apt-get install -y git
     fi
 
     if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -206,7 +207,7 @@ if [ "$first_run" = true ]; then
 
   if [ ! -z "$whiptail_installed" ]; then
     echo "Whiptail NOT installed, will install now:"
-    sudo apt install whiptail
+    sudo apt-get install -y whiptail
   fi
 
   # Ask whether the user wants to use F4F or MRS defaults

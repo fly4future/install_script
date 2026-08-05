@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 key_name="$HOME/.ssh/id_rsa_drone_login"
 
 input=(
@@ -182,4 +184,5 @@ if [ "$num" -lt "1" ]; then
 fi
 
 sudo $VIM_BIN $HEADLESS -Ens -c "set ignorecase" -c "%g/^\\n$\\n$\\n/norm dd" -c "wqa" -- "/etc/hosts"
+
 exit 0

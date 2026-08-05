@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 function disable_hibernation() {
     echo "Disabling hibernation"
     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -46,6 +48,7 @@ function set_power_mode() {
         sudo powerprofilesctl set balanced
     else
         echo "Power mode names on this system are unrecognized. Run 'powerprofilesctl list' to check which power modes are available and report this to the install script developer."
+        exit 1
     fi
 }
 
