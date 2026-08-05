@@ -67,6 +67,7 @@ When writing the scripts do the following:
 - check whether the commands you are using are available on the system, and if not, install them
 - if you want to script to be used non-interactively, you should check if `NON_INTERACTIVE_MODE=1`, and if so provide a way for the script to execute without using `whiptail`, `read`, or other interactive commands
 - return `0` on success and `1` on failure. Note that if you print some output on the console the user might not see it. Use `read -p "Press enter to continue"` to pause the script and allow the user to read the output before continuing, but make sure to check for `NON_INTERACTIVE_MODE=1` and skip the pause in that case.
+- ensure the scripts are idempotent, meaning that they can be run multiple times without causing issues
 
   ```sh
   if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
