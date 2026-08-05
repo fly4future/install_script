@@ -14,7 +14,7 @@ The script will prompt you for the exact version of Jetson Linux you want to ins
 
 The script will also ask you whether you want to keep the temporary files after flashing.
 If you need to flash multiple devices then select yes to avoid re-downloading them.
-A separate directory will be created for each version of Jetson Linux, my default at `$HOME/jetson_flash_tmp_VERSION/`.
+A separate directory will be created for each version of Jetson Linux, by default at `$HOME/jetson_flash_tmp_VERSION/`.
 In case you change your mind you can always delete the entire directory.
 The size of this directory is about 75 GB.
 
