@@ -2,6 +2,10 @@
 
 set -u
 
+# Write all output to the console and to a log file
+LOG_FILE="auto_setup_utility.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
 usage() {
     echo "Usage: $0 <profile-file>"
 }
@@ -39,7 +43,7 @@ set +a
 export NON_INTERACTIVE_MODE=1
 
 log() {
-    echo "[AUTO] $1"
+    echo "[$(date '+%F %T')] [AUTO] $*"
 }
 
 # Print a profile file with basic ANSI color highlighting:
