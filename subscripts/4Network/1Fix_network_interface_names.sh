@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+# Skip if already disabled
+if grep -qw 'net.ifnames=0' /proc/cmdline && grep -qw 'biosdevname=0' /proc/cmdline; then
+	echo "Predictable network interface names are already disabled."
+	exit 0
+fi
+
 if [[ -f /etc/default/grub ]]; then
 	# Device is using GRUB (e.g. Intel NUC)
 	if ! grep -q 'net\.ifnames=0' /etc/default/grub; then
@@ -42,12 +48,6 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
 		exit 1
 	fi
 else
-	read -p "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now? (y/n): " answer
-	if [[ "$answer" =~ ^[Yy]$ ]]; then
-		sudo reboot
-	else
-		echo "Please reboot the system as soon as possible to apply the changes."
-		echo "Network configuration will not work correctly until then (wrong interface names)"
-		exit 1
-	fi
+	echo "Option 'Predictable network interface names' has been disabled. Rebooting..."
+	sudo reboot
 fi
