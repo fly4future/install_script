@@ -33,7 +33,6 @@ Note that not all functionality of the manual setup utilities is available in th
 - MRS internal only configuration. Can be implemented in the future.
 - Disregarded scripts
 
-
 ## Flashing Jetson devices
 
 Requirements:
