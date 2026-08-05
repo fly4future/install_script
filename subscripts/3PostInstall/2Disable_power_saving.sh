@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 function disable_hibernation() {
     echo "Disabling hibernation"
     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -46,7 +48,12 @@ function set_power_mode() {
         sudo powerprofilesctl set balanced
     else
         echo "Power mode names on this system are unrecognized. Run 'powerprofilesctl list' to check which power modes are available and report this to the install script developer."
+        exit 1
     fi
+}
+
+function disable_screen_dimming(){
+    gsettings set org.gnome.desktop.session idle-delay 0
 }
 
 function set_jetson_power_mode() {
@@ -56,6 +63,7 @@ function set_jetson_power_mode() {
 
 disable_hibernation
 disable_wlan0_power_saving
+disable_screen_dimming
 set_power_mode
 
 # This should be last because it will ask for reboot, which will stop the script from running any further.

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 source "$(dirname "$0")/DISREGARD_common/udev_rules_common.sh"
 
 target_file=$(list_existing_udev_rules_file)
@@ -20,4 +22,4 @@ sudo rm "$target_file"
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 
-exit 1 # Exit 1 so that we go back to the udev menu instead of the main menu
+exit 0

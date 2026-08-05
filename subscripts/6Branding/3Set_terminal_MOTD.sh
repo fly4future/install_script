@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Remove execute permission from the following MOTD scripts, so that they do not run and display their messages
 [ -e /etc/update-motd.d/10-help-text ] && sudo chmod -x /etc/update-motd.d/10-help-text
 [ -e /etc/update-motd.d/60-unminimize ] && sudo chmod -x /etc/update-motd.d/60-unminimize

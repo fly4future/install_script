@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 add_to_bashrc () { #arg1 - what should we look for in .bashrc; arg2 - what should we put in bashrc if we did not find arg1
   if grep --quiet "$1" ~/.bashrc; then
     echo "$1 found in .bashrc"
@@ -49,7 +51,7 @@ fi
 echo "Setting up ~/$WORKSPACE_NAME..."
 source /opt/ros/jazzy/setup.bash             # source the general ROS workspace so that the local one will extend it and see all the packages
 mkdir -p ~/$WORKSPACE_NAME/src && cd ~/$WORKSPACE_NAME    # create the workspace folder in home and cd to it
-sudo apt install python3-colcon-mixin
+sudo apt-get install -y python3-colcon-mixin
 colcon init
 colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
 colcon mixin update default

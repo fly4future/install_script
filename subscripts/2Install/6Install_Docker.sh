@@ -4,7 +4,7 @@
 # Instructions for installing and configuring Nvidia Container Toolkit: https://docs.nvidia.com/jetson/orin-nano-devkit/user-guide/latest/setup_docker.html
 # Note that the instructions for the toolkit are wrong. The correct package to install is nvidia-container-toolkit, not nvidia-container, see https://github.com/fly4future/install_script/pull/18 for more info.
 
-set -e
+set -euo pipefail
 
 sudo apt-get install -y ca-certificates curl
 
@@ -83,6 +83,10 @@ echo
 
 if ! groups "$USER" | grep -qw docker; then
     echo "Please log out and log back in for docker group membership to take effect."
+fi
+
+if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+    read -p "Press Enter to continue..."
 fi
 
 exit 0

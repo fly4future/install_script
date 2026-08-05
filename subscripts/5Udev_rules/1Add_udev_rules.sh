@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 source "$(dirname "$0")/DISREGARD_common/udev_rules_common.sh"
 
 choose_write_mode() {
@@ -221,3 +223,5 @@ sudo chmod 644 "$target_file"
 
 sudo udevadm control --reload-rules
 sudo udevadm trigger
+
+exit 0

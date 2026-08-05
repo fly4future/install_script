@@ -1,5 +1,7 @@
 #!/bin/bash
 
-# sudo apt update 
-sudo apt -y install mrs-uav-usb-configurator
+set -euo pipefail
+
+sudo apt-get -y install mrs-uav-usb-configurator
+
 exit 0

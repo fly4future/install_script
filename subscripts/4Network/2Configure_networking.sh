@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 yesno_def_no() {
   whiptail --title "Network Config" --yesno "$1" --yes-button "No" --no-button "Yes" 0 0
   ret_val=$?
@@ -71,7 +73,7 @@ disable_network_manager() {
 # If netplan is not installed, install it
 if ! command -v netplan &>/dev/null; then
   echo "Netplan not found, installing..."
-  sudo apt update && sudo apt install -y netplan.io
+  sudo apt-get update && sudo apt-get install -y netplan.io
 fi
 
 if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then

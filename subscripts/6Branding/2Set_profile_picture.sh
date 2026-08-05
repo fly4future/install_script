@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 destination="/var/lib/AccountsService/icons/$USER"
 
 sudo cp subscripts/6Branding/DISREGARD/profile.png "$destination"
