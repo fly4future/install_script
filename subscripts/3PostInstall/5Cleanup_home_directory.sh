@@ -13,4 +13,8 @@ for dir in "${directories[@]}"; do
     fi
 done
 
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    read -p "Press Enter to continue..."
+fi
+
 exit 0
