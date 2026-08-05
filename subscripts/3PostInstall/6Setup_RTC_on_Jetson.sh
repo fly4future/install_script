@@ -40,7 +40,7 @@ echo "On boot, the system time will be read from the RTC"
 echo "Every time NTP updates the system time, it will be written back to the RTC"
 echo "After flashing keep the system online for some time so that NTP can update the system time and write it to the RTC"
 
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     read -p "Press Enter to continue..."
 fi
 

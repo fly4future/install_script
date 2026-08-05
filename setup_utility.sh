@@ -83,6 +83,8 @@ fi
 # helpline=white,black
 # roottext=lightgrey,black
 
+export NON_INTERACTIVE_MODE=0
+
 # Specify the folder path where your files are located
 DIR="$(dirname "$(readlink -f "$0")")"
 folder_path=""

@@ -70,7 +70,7 @@ When writing the scripts do the following:
 - ensure the scripts are idempotent, meaning that they can be run multiple times without causing issues
 
   ```sh
-  if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     read -p "Press Enter to continue..."
   fi
   ```
