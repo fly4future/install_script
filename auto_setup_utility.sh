@@ -164,12 +164,8 @@ main() {
     display_profile_colored "$PROFILE_FILE"
 
     echo
-    printf "Confirm and proceed? Type 'yes' to continue: "
-    read -r confirm
-    if [ "$confirm" != "yes" ]; then
-        log "Not confirmed. Exiting."
-        exit 1
-    fi
+    echo "Confirm and proceed? Press Enter to continue or Ctrl+C to abort."
+    read -r
 
     run_step "RUN_UPDATE_SYSTEM" "Update system" "$DIR/subscripts/1Update/1Update_system.sh" || exit 1
     run_step "RUN_UPDATE_SYSTEM_AND_ROS" "Update system and ROS" "$DIR/subscripts/1Update/2Update_system_and_baremetal_ROS.sh" || exit 1
