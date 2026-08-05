@@ -21,6 +21,8 @@ Use `auto_setup_utility.sh` to run setup non-interactively from a profile file, 
 Profile files are located in `profiles/` directly. They contain a list of toggles and variables for guiding the configuration.
 A new profile can be created by copying and modifying the `sample.conf` file as needed.
 
+The utility generates a log file `auto_setup_utility.log` which contains the output of all commands that were executed on the device.
+
 > [!IMPORTANT]
 > Many of the scripts require a reboot to apply changes. The non-interactive utility will automatically reboot the system when necessary.
 > After the reboot run the non-interactive utility again with the same profile to continue the configuration process.
