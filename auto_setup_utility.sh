@@ -187,7 +187,7 @@ main() {
     run_step "RUN_SET_PROFILE_PICTURE" "Set profile picture" "$DIR/subscripts/6Branding/2Set_profile_picture.sh" "${TARGET_VARIANT:-}" || exit 1
     run_step "RUN_SET_TERMINAL_MOTD" "Set terminal MOTD" "$DIR/subscripts/6Branding/3Set_terminal_MOTD.sh" "${TARGET_VARIANT:-}" || exit 1
 
-    log "Done."
+    log "Non-interactive setup completed successfully."
 }
 
 main

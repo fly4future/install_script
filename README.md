@@ -21,6 +21,11 @@ Use `auto_setup_utility.sh` to run setup non-interactively from a profile file, 
 Profile files are located in `profiles/` directly. They contain a list of toggles and variables for guiding the configuration.
 A new profile can be created by copying and modifying the `sample.conf` file as needed.
 
+> [!IMPORTANT]
+> Many of the scripts require a reboot to apply changes. The non-interactive utility will automatically reboot the system when necessary.
+> After the reboot run the non-interactive utility again with the same profile to continue the configuration process.
+> Repeat this process until the utility finishes without reboots. It will print "Non-interactive setup completed successfully" when finished.
+
 Note that not all functionality of the manual setup utilities is available in the non-interactive version. Most notably:
 
 - Switching from `networkd` back to `NetworkManager`, since it is only there for debugging purposes
@@ -48,7 +53,6 @@ In case you change your mind you can always delete the entire directory.
 The size of this directory is about 75 GB.
 
 After the script completes, you can continue configuration on the Jetson device by cloning this repository and running the `setup_utility.sh` script.
-
 
 ## Development instructions
 
