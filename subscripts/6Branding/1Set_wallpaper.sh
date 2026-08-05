@@ -36,6 +36,12 @@ else
 fi
 
 local_wallpaper_path="$folder_path/$wallpaper"            # The wallpaper path in the local subscripts folder
+
+if [[ ! -f "$local_wallpaper_path" ]]; then
+    echo "Path '$local_wallpaper_path' does not exist."
+    exit 1
+fi
+
 sudo mkdir -p "/usr/share/backgrounds"                    # Ensure the system backgrounds folder exists
 system_wallpaper_path="/usr/share/backgrounds/$wallpaper" # The wallpaper path in the system folder. Technically RPi uses a different directory for their defaults, but this one seem to be the most universal one.
 
