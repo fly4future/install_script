@@ -85,7 +85,7 @@ if ! groups "$USER" | grep -qw docker; then
     echo "Please log out and log back in for docker group membership to take effect."
 fi
 
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     read -p "Press Enter to continue..."
 fi
 

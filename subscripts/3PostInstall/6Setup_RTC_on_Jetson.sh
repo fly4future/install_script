@@ -15,7 +15,7 @@ if ! command -v hwclock >/dev/null 2>&1; then
 fi
 
 # In interactive mode we prompt the user to confirm they installed a RTC battery
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     echo "Ensure there is a battery for the RTC installed. Press Enter to continue or Ctrl+C to abort."
     read -r
 fi

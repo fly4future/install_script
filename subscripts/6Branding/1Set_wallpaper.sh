@@ -27,7 +27,7 @@ if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
   fi
 else
   # Check if VAL_WALLPAPER_NAME is set
-  if [[ -z $VAL_WALLPAPER_NAME ]]; then
+  if [[ -z "${VAL_WALLPAPER_NAME:-}" ]]; then
     echo "VAL_WALLPAPER_NAME is not set. Exiting"
     exit 1
   fi
