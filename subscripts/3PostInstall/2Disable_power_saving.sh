@@ -52,6 +52,10 @@ function set_power_mode() {
     fi
 }
 
+function disable_screen_dimming(){
+    gsettings set org.gnome.desktop.session idle-delay 0
+}
+
 function set_jetson_power_mode() {
     echo "Setting Jetson power mode to 25W. Reboot is required for the change to take effect."
     sudo nvpmodel --mode 3
@@ -59,6 +63,7 @@ function set_jetson_power_mode() {
 
 disable_hibernation
 disable_wlan0_power_saving
+disable_screen_dimming
 set_power_mode
 
 # This should be last because it will ask for reboot, which will stop the script from running any further.
