@@ -76,7 +76,7 @@ if ! command -v netplan &>/dev/null; then
   sudo apt-get update && sudo apt-get install -y netplan.io
 fi
 
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
   yesno_def_yes "This script will configure networking on the device. Systemd-networkd will be used as the backend for netplan and NetworkManager will be disabled. If you're connected via SSH you may lose connection when applying. Do you want to continue?"
   ret_val=$?
   if [ $ret_val -eq 1 ]; then
@@ -87,7 +87,7 @@ if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
   fi
 fi
 
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
   yesno_def_yes "Delete all previous netplan configs? (Recommended)"
   ret_val=$?
   if [ $ret_val -eq 1 ]; then
@@ -107,7 +107,7 @@ FILENAME=/tmp/01-netcfg.yaml
 rm -f -- "$FILENAME"
 touch -- "$FILENAME"
 
-if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
   echo "network:" >>"$FILENAME"
   echo "  version: 2" >>"$FILENAME"
   echo "  renderer: networkd" >>"$FILENAME"

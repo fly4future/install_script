@@ -21,13 +21,19 @@ Use `auto_setup_utility.sh` to run setup non-interactively from a profile file, 
 Profile files are located in `profiles/` directly. They contain a list of toggles and variables for guiding the configuration.
 A new profile can be created by copying and modifying the `sample.conf` file as needed.
 
+The utility generates a log file `auto_setup_utility.log` which contains the output of all commands that were executed on the device.
+
+> [!IMPORTANT]
+> Many of the scripts require a reboot to apply changes. The non-interactive utility will automatically reboot the system when necessary.
+> After the reboot run the non-interactive utility again with the same profile to continue the configuration process.
+> Repeat this process until the utility finishes without reboots. It will print "Non-interactive setup completed successfully" when finished.
+
 Note that not all functionality of the manual setup utilities is available in the non-interactive version. Most notably:
 
 - Switching from `networkd` back to `NetworkManager`, since it is only there for debugging purposes
 - Installation and uninstallation of ROS without docker (directly with `apt`). This can be implemented in the future.
 - MRS internal only configuration. Can be implemented in the future.
 - Disregarded scripts
-
 
 ## Flashing Jetson devices
 
@@ -49,7 +55,6 @@ The size of this directory is about 75 GB.
 
 After the script completes, you can continue configuration on the Jetson device by cloning this repository and running the `setup_utility.sh` script.
 
-
 ## Development instructions
 
 The interactive wizard automatically detects `.sh` scripts in the `subscripts/` directory and it's subdirectories. To add a new script, simply place it in the appropriate directory and ensure it has execute permissions (`chmod +x script.sh`).
@@ -63,9 +68,10 @@ When writing the scripts do the following:
 - check whether the commands you are using are available on the system, and if not, install them
 - if you want to script to be used non-interactively, you should check if `NON_INTERACTIVE_MODE=1`, and if so provide a way for the script to execute without using `whiptail`, `read`, or other interactive commands
 - return `0` on success and `1` on failure. Note that if you print some output on the console the user might not see it. Use `read -p "Press enter to continue"` to pause the script and allow the user to read the output before continuing, but make sure to check for `NON_INTERACTIVE_MODE=1` and skip the pause in that case.
+- ensure the scripts are idempotent, meaning that they can be run multiple times without causing issues
 
   ```sh
-  if [[ "$NON_INTERACTIVE_MODE" -ne 1 ]]; then
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     read -p "Press Enter to continue..."
   fi
   ```

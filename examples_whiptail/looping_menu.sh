@@ -35,7 +35,7 @@ main() {
         exit 1
         ;;
     esac
-    read -p "${blink}${bold}Hit enter to continue ...${normal}" #wait for user input before returning to the menu
+    read -p "${blink}${bold}Press enter to continue ...${normal}" #wait for user input before returning to the menu
   done
 }
 

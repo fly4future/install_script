@@ -164,12 +164,8 @@ main() {
     display_profile_colored "$PROFILE_FILE"
 
     echo
-    printf "Confirm and proceed? Type 'yes' to continue: "
-    read -r confirm
-    if [ "$confirm" != "yes" ]; then
-        log "Not confirmed. Exiting."
-        exit 1
-    fi
+    echo "Confirm and proceed? Press Enter to continue or Ctrl+C to abort."
+    read -r
 
     run_step "RUN_UPDATE_SYSTEM" "Update system" "$DIR/subscripts/1Update/1Update_system.sh" || exit 1
     run_step "RUN_UPDATE_SYSTEM_AND_ROS" "Update system and ROS" "$DIR/subscripts/1Update/2Update_system_and_baremetal_ROS.sh" || exit 1
@@ -178,6 +174,8 @@ main() {
     run_step "RUN_INSTALL_DOCKER" "Install Docker" "$DIR/subscripts/2Install/6Install_Docker.sh" || exit 1
     run_step "RUN_INSTALL_INTEL_WIFI_DRIVERS" "Install Intel WiFi drivers" "$DIR/subscripts/2Install/7Install_Intel_WiFi_drivers.sh" || exit 1
 
+    run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
+
     run_step "RUN_DISABLE_POWER_SAVING" "Disable power saving" "$DIR/subscripts/3PostInstall/2Disable_power_saving.sh" || exit 1
     run_step "RUN_GENERATE_SSH_CONFIG" "Generate SSH config" "$DIR/subscripts/3PostInstall/3Generate_SSH_config.sh" || exit 1
     run_step "RUN_SET_SWAP_16GB" "Set swap to 16GB" "$DIR/subscripts/3PostInstall/4Set_Swap_to_16GB.sh" || exit 1
@@ -185,13 +183,11 @@ main() {
     run_step "RUN_SETUP_RTC_ON_JETSON" "Setup RTC on Jetson" "$DIR/subscripts/3PostInstall/6Setup_RTC_on_Jetson.sh" || exit 1
     run_step "RUN_SET_TIMEZONE_TO_PRAGUE" "Set timezone to Europe/Prague" "$DIR/subscripts/3PostInstall/7Set_timezone_to_Prague.sh" || exit 1
 
-    run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
-
     run_step "RUN_SET_WALLPAPER" "Set wallpaper" "$DIR/subscripts/6Branding/1Set_wallpaper.sh" || exit 1
     run_step "RUN_SET_PROFILE_PICTURE" "Set profile picture" "$DIR/subscripts/6Branding/2Set_profile_picture.sh" "${TARGET_VARIANT:-}" || exit 1
     run_step "RUN_SET_TERMINAL_MOTD" "Set terminal MOTD" "$DIR/subscripts/6Branding/3Set_terminal_MOTD.sh" "${TARGET_VARIANT:-}" || exit 1
 
-    log "Done."
+    log "Non-interactive setup completed successfully."
 }
 
 main
