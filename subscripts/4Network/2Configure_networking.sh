@@ -132,21 +132,169 @@ delete_old_netplan_configs() {
   msgbox "Deleted all yaml files in /etc/netplan/"
 }
 
-init_interface_defaults() {
+get_current_interface_enabled() {
+  local int="$1"
+  local state
+
+  state=$(cat "/sys/class/net/$int/operstate" 2>/dev/null || true)
+
+  case "$state" in
+  up | unknown | dormant)
+    echo "yes"
+    ;;
+  *)
+    echo "no"
+    ;;
+  esac
+}
+
+get_current_dhcp4() {
+  local int="$1"
+  local address_flags
+
+  # Addresses obtained by DHCP are normally marked "dynamic" by the kernel.
+  address_flags=$(ip -o -4 address show dev "$int" scope global 2>/dev/null || true)
+
+  if [[ "$address_flags" == *" dynamic "* ]]; then
+    echo "yes"
+  elif [[ -n "$address_flags" ]]; then
+    echo "no"
+  else
+    # Preserve original behavior when no current information exists.
+    echo "yes"
+  fi
+}
+
+get_current_address_and_prefix() {
+  local int="$1"
+  local address_with_prefix
+
+  address_with_prefix=$(
+    ip -o -4 address show dev "$int" scope global 2>/dev/null |
+      awk 'NR == 1 { print $4 }'
+  )
+
+  printf '%s\n' "$address_with_prefix"
+}
+
+get_current_gateway() {
   local int="$1"
 
-  CFG_ENABLED["$int"]="yes"
-  CFG_DHCP4["$int"]="yes"
-  CFG_ADDRESS["$int"]="$(get_default_ip_for_interface "$int")"
-  CFG_PREFIX["$int"]="24"
-  CFG_GATEWAY_TO_INTERNET["$int"]="$(get_default_gateway_to_internet_for_interface "$int")"
-  CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
-  CFG_METRIC["$int"]="$(get_metric_for_interface "$int")"
-  CFG_DNS["$int"]="8.8.8.8"
+  ip -4 route show default dev "$int" 2>/dev/null |
+    awk '
+      NR == 1 {
+        for (i = 1; i <= NF; i++) {
+          if ($i == "via" && (i + 1) <= NF) {
+            print $(i + 1)
+            exit
+          }
+        }
+      }
+    '
+}
+
+get_current_metric() {
+  local int="$1"
+
+  ip -4 route show default dev "$int" 2>/dev/null |
+    awk '
+      NR == 1 {
+        for (i = 1; i <= NF; i++) {
+          if ($i == "metric" && (i + 1) <= NF) {
+            print $(i + 1)
+            exit
+          }
+        }
+      }
+    '
+}
+
+get_current_dns() {
+  local int="$1"
+  local dns=""
+
+  if command -v resolvectl >/dev/null 2>&1; then
+    dns=$(
+      resolvectl dns "$int" 2>/dev/null |
+        awk -F: '
+          NR == 1 {
+            sub(/^[[:space:]]+/, "", $2)
+            split($2, addresses, /[[:space:]]+/)
+            print addresses[1]
+          }
+        '
+    )
+  fi
+
+  printf '%s\n' "$dns"
+}
+
+get_current_ssid() {
+  local int="$1"
+  local ssid=""
+
+  if command -v iwgetid >/dev/null 2>&1; then
+    ssid=$(iwgetid "$int" --raw 2>/dev/null || true)
+  fi
+
+  if [[ -z "$ssid" ]] && command -v iw >/dev/null 2>&1; then
+    ssid=$(
+      iw dev "$int" link 2>/dev/null |
+        sed -n 's/^[[:space:]]*SSID: //p' |
+        head -n 1
+    )
+  fi
+
+  printf '%s\n' "$ssid"
+}
+
+init_interface_defaults() {
+  local int="$1"
+  local current_address_with_prefix=""
+  local current_address=""
+  local current_prefix=""
+  local current_gateway=""
+  local current_metric=""
+  local current_dns=""
+  local current_ssid=""
+  local current_password=""
+
+  # Initialize enabled state and DHCP settings using existing helpers
+  CFG_ENABLED["$int"]="$(get_current_interface_enabled "$int")"
+  CFG_DHCP4["$int"]="$(get_current_dhcp4 "$int")"
+
+  # Retrieve current IP and prefix
+  current_address_with_prefix="$(get_current_address_and_prefix "$int")"
+
+  if [[ "$current_address_with_prefix" == */* ]]; then
+    current_address="${current_address_with_prefix%/*}"
+    current_prefix="${current_address_with_prefix#*/}"
+  fi
+
+  current_gateway="$(get_current_gateway "$int")"
+  current_metric="$(get_current_metric "$int")"
+  current_dns="$(get_current_dns "$int")"
+
+  CFG_ADDRESS["$int"]="${current_address:-$(get_default_ip_for_interface "$int")}"
+  CFG_PREFIX["$int"]="${current_prefix:-24}"
+
+  if [[ -n "$current_gateway" ]]; then
+    CFG_GATEWAY_TO_INTERNET["$int"]="yes"
+    CFG_GATEWAY["$int"]="$current_gateway"
+  else
+    CFG_GATEWAY_TO_INTERNET["$int"]="no"
+    CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
+  fi
+
+  CFG_METRIC["$int"]="${current_metric:-$(get_metric_for_interface "$int")}"
+  CFG_DNS["$int"]="${current_dns:-8.8.8.8}"
 
   if is_wifi_interface "$int"; then
     CFG_TYPE["$int"]="wifi"
-    CFG_SSID["$int"]="$(get_default_ssid)"
+
+    current_ssid="$(get_current_ssid "$int")"
+    CFG_SSID["$int"]="${current_ssid:-$(get_default_ssid)}"
+
     CFG_PASSWORD["$int"]="$(get_default_wifi_password)"
   else
     CFG_TYPE["$int"]="ethernet"
