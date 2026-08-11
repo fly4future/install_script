@@ -1,13 +1,13 @@
 #!/bin/bash
 
-set -u
+set -uo pipefail
 
 TITLE="Network Config"
 FILENAME="/tmp/01-netcfg.yaml"
 
 yesno_def_yes() {
   whiptail --title "$TITLE" --yesno "$1" 0 0
-  ret_val=$?
+  local ret_val=$?
 
   if [ "$ret_val" -eq 255 ]; then
     exit 1
@@ -25,15 +25,14 @@ input_box() {
   local prompt="$1"
   local default_value="${2:-}"
 
-  local tmp
-  tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
+  local tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
 
-  ret_val=$?
+  local ret_val=$?
 
   if [ "$ret_val" -eq 255 ]; then
     exit 1
   elif [ "$ret_val" -eq 1 ]; then
-    exit 1
+    return 1
   elif [ "$ret_val" -eq 0 ]; then
     printf '%s\n' "$tmp"
     return 0
@@ -102,16 +101,6 @@ get_metric_for_interface() {
     echo "100"
   else
     echo "200"
-  fi
-}
-
-get_default_gateway_to_internet_for_interface() {
-  local int="$1"
-
-  if is_wifi_interface "$int"; then
-    echo "yes"
-  else
-    echo "no"
   fi
 }
 
@@ -376,7 +365,7 @@ Choose option to edit:"
     local choice
     choice=$(whiptail --title "$TITLE - $int" --ok-button "Edit" --cancel-button "Back" --menu "$menu_text" \
       22 70 12 "${menu_items[@]}" 3>&1 1>&2 2>&3)
-    ret_val=$?
+    local ret_val=$?
 
     case "$ret_val" in
     0)
@@ -417,11 +406,13 @@ Choose option to edit:"
       ;;
 
     "Static address")
-      CFG_ADDRESS["$int"]=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}")
+      local tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
+      CFG_ADDRESS["$int"]="$tmp"
       ;;
 
     "CIDR prefix")
-      CFG_PREFIX["$int"]=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}")
+      local tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
+      CFG_PREFIX["$int"]="$tmp"
       ;;
 
     "Gateway to internet")
@@ -434,23 +425,28 @@ Choose option to edit:"
       ;;
 
     "Default gateway")
-      CFG_GATEWAY["$int"]=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}")
+      local tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
+      CFG_GATEWAY["$int"]="$tmp"
       ;;
 
     "Metric")
-      CFG_METRIC["$int"]=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}")
+      local tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
+      CFG_METRIC["$int"]="$tmp"
       ;;
 
     "DNS server")
-      CFG_DNS["$int"]=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}")
+      local tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
+      CFG_DNS["$int"]="$tmp"
       ;;
 
     "Wi-Fi SSID")
-      CFG_SSID["$int"]=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}")
+      local tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
+      CFG_SSID["$int"]="$tmp"
       ;;
 
     "Wi-Fi password")
-      CFG_PASSWORD["$int"]=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}")
+      local tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
+      CFG_PASSWORD["$int"]="$tmp"
       ;;
     esac
   done
@@ -479,7 +475,7 @@ main_interface_menu() {
       "${menu_items[@]}" \
       3>&1 1>&2 2>&3)
 
-    ret_val=$?
+    local ret_val=$?
 
     case "$ret_val" in
     0)
@@ -501,6 +497,9 @@ main_interface_menu() {
         edit_interface_menu "$choice"
         ;;
       esac
+      ;;
+    1 | 255)
+      exit 0
       ;;
     *)
       echo "Error state"
