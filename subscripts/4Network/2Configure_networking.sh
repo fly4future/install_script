@@ -662,7 +662,7 @@ validate_basic_config() {
 install_netplan_if_missing() {
   if ! command -v netplan >/dev/null 2>&1; then
     echo "Netplan not found, installing..."
-    sudo apt update && sudo apt install -y netplan.io
+    sudo apt-get update && sudo apt-get install -y netplan.io
   fi
 }
 
