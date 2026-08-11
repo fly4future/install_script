@@ -5,20 +5,8 @@ set -uo pipefail
 TITLE="Network Config"
 FILENAME="/tmp/01-netcfg.yaml"
 
-yesno_def_yes() {
+yesno() {
   whiptail --title "$TITLE" --yesno "$1" 0 0
-  local ret_val=$?
-
-  if [ "$ret_val" -eq 255 ]; then
-    exit 1
-  elif [ "$ret_val" -eq 0 ]; then
-    return 1 # user selected Yes
-  elif [ "$ret_val" -eq 1 ]; then
-    return 0 # user selected No
-  else
-    echo "Error state"
-    exit 1
-  fi
 }
 
 input_box() {
@@ -117,8 +105,7 @@ get_default_wifi_password() {
 }
 
 delete_old_netplan_configs() {
-  yesno_def_yes "Are you sure you want to delete all *.yaml files in /etc/netplan/?"
-  if [ "$?" -eq 1 ]; then
+  if yesno "Are you sure you want to delete all *.yaml files in /etc/netplan/?"; then
     sudo rm -f /etc/netplan/*.yaml
     msgbox "Deleted all *.yaml files in /etc/netplan"
   fi
@@ -391,8 +378,7 @@ Choose option to edit:"
 
     case "$choice" in
     "Enabled")
-      yesno_def_yes "Enable interface $int?"
-      if [ "$?" -eq 1 ]; then
+      if yesno "Enable interface $int?"; then
         CFG_ENABLED["$int"]="yes"
       else
         CFG_ENABLED["$int"]="no"
@@ -400,8 +386,7 @@ Choose option to edit:"
       ;;
 
     "DHCP IPv4")
-      yesno_def_yes "Use DHCP IPv4 on $int?"
-      if [ "$?" -eq 1 ]; then
+      if yesno "Use DHCP IPv4 on $int?"; then
         CFG_DHCP4["$int"]="yes"
       else
         CFG_DHCP4["$int"]="no"
@@ -419,8 +404,7 @@ Choose option to edit:"
       ;;
 
     "Gateway to internet")
-      yesno_def_yes "Should $int be a gateway to the internet?"
-      if [ "$?" -eq 1 ]; then
+      if yesno "Should $int be a gateway to the internet?"; then
         CFG_GATEWAY_TO_INTERNET["$int"]="yes"
       else
         CFG_GATEWAY_TO_INTERNET["$int"]="no"
@@ -738,13 +722,11 @@ interactive_mode() {
     local netplan_preview
     netplan_preview=$(cat "$FILENAME")
 
-    yesno_def_yes "The following netplan was generated:
+    if yesno "The following netplan was generated:
 
 $netplan_preview
 
-Save to /etc/netplan/01-netcfg.yaml and apply?"
-
-    if [ "$?" -eq 1 ]; then
+Save to /etc/netplan/01-netcfg.yaml and apply?"; then
       # User selected Yes
       break
     else
