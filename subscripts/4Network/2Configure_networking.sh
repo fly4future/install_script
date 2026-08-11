@@ -424,7 +424,7 @@ Choose option to edit:"
       ;;
 
     "Gateway to internet")
-      yesno_def_yes "Should $int use a default gateway to the internet?"
+      yesno_def_yes "Should $int be a gateway to the internet?"
       if [ "$?" -eq 1 ]; then
         CFG_GATEWAY_TO_INTERNET["$int"]="yes"
       else
