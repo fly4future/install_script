@@ -134,18 +134,19 @@ delete_old_netplan_configs() {
 
 get_current_interface_enabled() {
   local int="$1"
-  local state
 
-  state=$(cat "/sys/class/net/$int/operstate" 2>/dev/null || true)
+  if [[ -r "/sys/class/net/$int/flags" ]]; then
+    local flags
+    flags=$(<"/sys/class/net/$int/flags")
 
-  case "$state" in
-  up | unknown | dormant)
-    echo "yes"
-    ;;
-  *)
+    if ((flags & 0x1)); then
+      echo "yes"
+    else
+      echo "no"
+    fi
+  else
     echo "no"
-    ;;
-  esac
+  fi
 }
 
 get_current_dhcp4() {
