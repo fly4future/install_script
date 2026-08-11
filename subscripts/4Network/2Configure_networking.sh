@@ -117,8 +117,11 @@ get_default_wifi_password() {
 }
 
 delete_old_netplan_configs() {
-  sudo rm -f /etc/netplan/*.yaml
-  msgbox "Deleted all yaml files in /etc/netplan/"
+  yesno_def_yes "Are you sure you want to delete all *.yaml files in /etc/netplan/?"
+  if [ "$?" -eq 1 ]; then
+    sudo rm -f /etc/netplan/*.yaml
+    msgbox "Deleted all *.yaml files in /etc/netplan"
+  fi
 }
 
 get_current_interface_enabled() {
