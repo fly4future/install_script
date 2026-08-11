@@ -4,7 +4,11 @@ set -euo pipefail
 
 # Skip if already disabled
 if grep -qw 'net.ifnames=0' /proc/cmdline && grep -qw 'biosdevname=0' /proc/cmdline; then
-	echo "Predictable network interface names are already disabled."
+	if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+		whiptail --title "Fix network interface names" --msgbox "Option 'Predictable network interface names' is already disabled!" 0 0
+	else
+		echo "Option 'Predictable network interface names' is already disabled!"
+	fi
 	exit 0
 fi
 
