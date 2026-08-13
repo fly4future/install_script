@@ -313,9 +313,6 @@ edit_interface_menu() {
 
     menu_text="Interface: $int
 
-Current summary:
-$(interface_summary "$int")
-
 Choose option to edit:"
 
     local menu_items=(
