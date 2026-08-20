@@ -86,7 +86,7 @@ choose_mrs_board() {
 }
 
 configure_connected_devices() {
-  # List devices that the user might be interesting in adding udev rules for
+  # List devices that the user might be interested in adding udev rules for
   devices=$(ls /dev | grep -e ttyUSB -e ttyACM -e ttyTHS)
 
   if [ -z "$devices" ]; then
@@ -96,18 +96,14 @@ configure_connected_devices() {
 
   generated_rules=""
 
-  # Loop over found devices and for each prompt user whether they want to add a udev rule for that device.
-  # If they do, ask what they want to name the symlink for that device and then write the corresponding udev rule to target file
+  # Loop over found devices and prompt user whether they want to add a udev rule
   for device in $devices; do
     device_info=$(get_device_info "$device")
-    idVendor=$(get_udev_value "$device" "ID_VENDOR_ID")
-    idProduct=$(get_udev_value "$device" "ID_MODEL_ID")
-    Serial=$(get_udev_value "$device" "ID_SERIAL_SHORT")
 
     yesno_def_yes "Do you want to add a udev rule for this device? $device:\n$device_info"
     ret_val=$?
 
-    # skip unless user answered Yes (return code 0)
+    # Skip unless user answered Yes (return code 0)
     if [ $ret_val -ne 0 ]; then
       continue
     fi
@@ -117,11 +113,24 @@ configure_connected_devices() {
       continue
     fi
 
-    rule_line="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
-    if [ -n "$Serial" ]; then
-      rule_line="$rule_line, ATTRS{serial}==\"$Serial\""
+    # Check if this is a native UART or a USB device
+    if udevadm info -q property -n "/dev/$device" | grep -qx "ID_BUS=usb"; then
+      # USB device
+      idVendor=$(get_udev_value "$device" "ID_VENDOR_ID")
+      idProduct=$(get_udev_value "$device" "ID_MODEL_ID")
+      Serial=$(get_udev_value "$device" "ID_SERIAL_SHORT")
+
+      rule_line="SUBSYSTEM==\"tty\", ATTRS{idVendor}==\"$idVendor\", ATTRS{idProduct}==\"$idProduct\""
+
+      if [ -n "$Serial" ]; then
+        rule_line="$rule_line, ATTRS{serial}==\"$Serial\""
+      fi
+
+      rule_line="$rule_line, SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
+    else
+      # Native UART
+      rule_line="KERNEL==\"$device\", SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
     fi
-    rule_line="$rule_line, SYMLINK+=\"$symlink\", OWNER=\"$USER\", MODE=\"0666\""
 
     generated_rules+="$rule_line"$'\n'
   done
@@ -214,7 +223,7 @@ if [ "$write_mode" = "new" ]; then
   sudo mv "$tmp_file" "$target_file"
 else
   # If the user chose to append to an existing file, we need to concatenate the temp file with the existing file and write the result to the target location
-  cat "$tmp_file" >>"$target_file"
+  sudo tee -a "$target_file" < "$tmp_file" >/dev/null
   rm "$tmp_file"
 fi
 
