@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -o pipefail
 
 source "$(dirname "$0")/DISREGARD_common/udev_rules_common.sh"
 
