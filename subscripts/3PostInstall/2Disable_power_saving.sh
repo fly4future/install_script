@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+script_dir="$(dirname "$(realpath "$0")")"
+
 function disable_hibernation() {
     echo "Disabling hibernation"
     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -27,7 +29,7 @@ function disable_wlan0_power_saving() {
         sudo iw wlan0 set power_save off
 
         # The setting does not persist across reboots, so we also create a systemd service to disable it on boot.
-        sudo cp subscripts/3PostInstall/DISREGARD/disable-wlan0-power_saving.service /etc/systemd/system/disable-wlan0-power_saving.service
+        sudo cp "$script_dir/DISREGARD/disable-wlan0-power_saving.service" /etc/systemd/system/disable-wlan0-power_saving.service
         sudo systemctl daemon-reload
         sudo systemctl enable --now disable-wlan0-power_saving.service
 
