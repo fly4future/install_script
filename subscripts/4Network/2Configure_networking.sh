@@ -13,9 +13,9 @@ input_box() {
   local prompt="$1"
   local default_value="${2:-}"
 
-  local tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
-
-  local ret_val=$?
+  local tmp
+  local ret_val=0
+  tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3) || ret_val=$?
 
   if [ "$ret_val" -eq 255 ]; then
     exit 1
@@ -391,12 +391,14 @@ Choose option to edit:"
       ;;
 
     "Static address")
-      local tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
       CFG_ADDRESS["$int"]="$tmp"
       ;;
 
     "CIDR prefix")
-      local tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
       CFG_PREFIX["$int"]="$tmp"
       ;;
 
@@ -409,27 +411,32 @@ Choose option to edit:"
       ;;
 
     "Default gateway")
-      local tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
       CFG_GATEWAY["$int"]="$tmp"
       ;;
 
     "Metric")
-      local tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
       CFG_METRIC["$int"]="$tmp"
       ;;
 
     "DNS server")
-      local tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
       CFG_DNS["$int"]="$tmp"
       ;;
 
     "Wi-Fi SSID")
-      local tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
       CFG_SSID["$int"]="$tmp"
       ;;
 
     "Wi-Fi password")
-      local tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
       CFG_PASSWORD["$int"]="$tmp"
       ;;
     esac

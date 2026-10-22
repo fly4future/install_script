@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-whiptail --title "Reenable Network Manager" --yesno "This script will reenable Network Manager and delete all your netplan configs. If you are connected through SSH, you will lose connection and you will not regain it automatically. You will probably have to reconfigure all the network configurations.\n\n\n                        Proceed?" --yes-button "No" --no-button "Yes" 15 60
-ret_val=$?
+ret_val=0
+whiptail --title "Reenable Network Manager" --yesno "This script will reenable Network Manager and delete all your netplan configs. If you are connected through SSH, you will lose connection and you will not regain it automatically. You will probably have to reconfigure all the network configurations.\n\n\n                        Proceed?" --yes-button "No" --no-button "Yes" 15 60 || ret_val=$?
 
 if [ $ret_val -eq 255 ]; then
   exit 1
