@@ -35,7 +35,7 @@ msgbox() {
 }
 
 enable_systemd_networkd() {
-  sudo systemctl unmask systemd-networkd systemd-resolved
+  sudo systemctl unmask systemd-networkd.socket systemd-networkd systemd-resolved
   sudo systemctl enable --now systemd-networkd systemd-resolved
 }
 
