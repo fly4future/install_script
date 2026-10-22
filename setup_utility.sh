@@ -125,10 +125,10 @@ main() {
 
     if [ $? -eq 0 ]; then
 
-      if [[ -d ${FULL_FILEPATHS[$((choice - 1))]} ]]; then
-        ./$0 ${FULL_FILEPATHS[$((choice - 1))]} # Run this script again but in the selected folder
+      if [[ -d "${FULL_FILEPATHS[$((choice - 1))]}" ]]; then
+        "$DIR/$(basename "$0")" "${FULL_FILEPATHS[$((choice - 1))]}" # Run this script again but in the selected folder
       else
-        ${FULL_FILEPATHS[$((choice - 1))]}
+        "${FULL_FILEPATHS[$((choice - 1))]}"
 
         # Check the exit status of the script that was run
         if [ $? -ne 0 ]; then
@@ -186,17 +186,19 @@ if [ "$first_run" = true ]; then
       else
         sudo apt-get update
       fi
+    else
+      sudo apt-get update
     fi
     if ! command -v git &>/dev/null; then
       echo "Git is not installed. Installing git..."
       sudo apt-get install -y git
     fi
 
-    if ! git diff --quiet || ! git diff --cached --quiet; then
+    if ! git -C "$DIR" diff --quiet || ! git -C "$DIR" diff --cached --quiet; then
       echo "Error: Local changes detected. Commit or stash your changes before pulling."
       exit 1
     fi
-    git pull
+    git -C "$DIR" pull
   else
     echo -e "${red}${bold}You are not connected to the internet!${normal} (No response from google.com)"
     echo -e "${red}${bold}You will not be to install/update any new software!${normal}"
