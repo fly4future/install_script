@@ -12,8 +12,8 @@ elif [ $ret_val -eq 1 ]; then
   sudo systemctl unmask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
   sudo systemctl enable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher
 
-  sudo systemctl disable --now systemd-networkd
-  sudo systemctl mask systemd-networkd
+  sudo systemctl disable --now systemd-networkd.socket systemd-networkd
+  sudo systemctl mask systemd-networkd.socket systemd-networkd
   sudo systemctl unmask systemd-resolved
   sudo systemctl enable --now systemd-resolved
 
