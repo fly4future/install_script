@@ -42,8 +42,8 @@ else
 fi
 
 if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
-	whiptail --title "Fix network interface names" --yesno "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now?" --defaultno 0 0
-	ret_val=$?
+	ret_val=0
+	whiptail --title "Fix network interface names" --yesno "Option 'Predictable network interface names' has been disabled. Changes will apply only after system reboot. Do you want to reboot now?" --defaultno 0 0 || ret_val=$?
 
 	if [ $ret_val -eq 0 ]; then
 		sudo reboot
