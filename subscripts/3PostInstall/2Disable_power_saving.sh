@@ -59,12 +59,16 @@ function disable_screen_dimming(){
 }
 
 function set_jetson_power_mode() {
+    if [[ "$(sudo nvpmodel -q | grep -E '^[0-9]+$')" == "3" ]]; then
+        echo "Jetson power mode is already set to 25W"
+        return 0
+    fi
+
     echo "Setting Jetson power mode to 25W. Reboot is required for the change to take effect."
 
     if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
         sudo nvpmodel --mode 3
     else
-        echo "Option 'Predictable network interface names' has been disabled. Rebooting..."
         sudo nvpmodel --mode 3 --force
     fi
 }
