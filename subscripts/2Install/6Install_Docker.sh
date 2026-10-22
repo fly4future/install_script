@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Instructions for installing Docker: https://docs.docker.com/engine/install/ubuntu
+# Instructions for installing Docker: https://docs.docker.com/engine/install/ubuntu and https://docs.docker.com/engine/install/debian
 # Instructions for installing and configuring Nvidia Container Toolkit: https://docs.nvidia.com/jetson/orin-nano-devkit/user-guide/latest/setup_docker.html
 # Note that the instructions for the toolkit are wrong. The correct package to install is nvidia-container-toolkit, not nvidia-container, see https://github.com/fly4future/install_script/pull/18 for more info.
 
@@ -33,16 +33,20 @@ fi
 if [ "$DOCKER_ALREADY_INSTALLED" = false ]; then
     echo "Installing Docker..."
 
+    # Docker has a repository for Ubuntu and another one for Debian (e.g. Raspberry Pi OS)
+    DOCKER_DISTRO=$(. /etc/os-release && if [ -n "${UBUNTU_CODENAME:-}" ]; then echo ubuntu; else echo "$ID"; fi)
+    DOCKER_SUITE=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+
     # Add Docker's official GPG key
     sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo curl -fsSL "https://download.docker.com/linux/$DOCKER_DISTRO/gpg" -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
 
     # Add Docker repository
     sudo tee /etc/apt/sources.list.d/docker.sources >/dev/null <<EOF
 Types: deb
-URIs: https://download.docker.com/linux/ubuntu
-Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+URIs: https://download.docker.com/linux/$DOCKER_DISTRO
+Suites: $DOCKER_SUITE
 Components: stable
 Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/docker.asc
