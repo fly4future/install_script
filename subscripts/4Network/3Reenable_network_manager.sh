@@ -26,9 +26,19 @@ elif [ $ret_val -eq 1 ]; then
   echo "  version: 2" >> $FILENAME
   echo "  renderer: NetworkManager" >> $FILENAME
   sudo cp $FILENAME /etc/netplan
+  sudo chmod 600 /etc/netplan/01-network-manager-all.yaml
 
   sudo netplan generate
   sudo netplan apply
+
+  # netplan does not clean up after the networkd config. The leftover udev rules mark the interfaces as unmanaged by NetworkManager
+  # and the netplan wpa_supplicant keeps running, so remove them and let NetworkManager pick up the interfaces.
+  sudo rm -f /run/udev/rules.d/90-netplan.rules
+  sudo systemctl stop 'netplan-wpa-*.service'
+  sudo udevadm control --reload
+  sudo udevadm trigger --action=change --subsystem-match=net
+  sudo udevadm settle
+  sudo systemctl restart NetworkManager
 
   echo "Network manager enabled"
   exit 0
