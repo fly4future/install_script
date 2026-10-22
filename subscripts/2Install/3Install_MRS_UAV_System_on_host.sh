@@ -48,7 +48,10 @@ link_tmux() {
         case $choice in
           1)
             echo "Setup as a UAV"
-            ln -s /etc/ctu-mrs/tmux.conf ~/.tmux.conf
+            if [ -e ~/.tmux.conf ] && [ ! -L ~/.tmux.conf ]; then
+              mv ~/.tmux.conf ~/.tmux.conf.bak
+            fi
+            ln -sf /etc/ctu-mrs/tmux.conf ~/.tmux.conf
             ;;
           2)
             echo "Setup as user's computer"
