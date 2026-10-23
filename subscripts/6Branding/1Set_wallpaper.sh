@@ -18,13 +18,11 @@ if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
     --title "Set Wallpaper" \
     --menu "Select wallpaper:" 0 0 0 \
     "${options[@]}" \
-    3>&1 1>&2 2>&3)
-
-  # If user cancelled
-  if [ $? -ne 0 ]; then
+    3>&1 1>&2 2>&3) || {
+    # User cancelled
     echo "Cancelled."
     exit 1
-  fi
+  }
 else
   # Check if VAL_WALLPAPER_NAME is set
   if [[ -z "${VAL_WALLPAPER_NAME:-}" ]]; then
