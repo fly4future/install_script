@@ -104,6 +104,12 @@ get_default_wifi_password() {
   echo "mikrokopter"
 }
 
+# We don't need to wait for interfaces without a route to the internet when booting
+is_optional_interface() {
+  local int="$1"
+  [ "${CFG_DHCP4[$int]}" = "no" ] && [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "no" ]
+}
+
 delete_old_netplan_configs() {
   if yesno "Are you sure you want to delete all *.yaml files in /etc/netplan/?"; then
     sudo rm -f /etc/netplan/*.yaml
@@ -535,6 +541,10 @@ generate_netplan() {
         echo "      dhcp6: no"
       } >>"$FILENAME"
 
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
+
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
           echo "      addresses:"
@@ -571,6 +581,10 @@ generate_netplan() {
         echo "      dhcp4: ${CFG_DHCP4[$int]}"
         echo "      dhcp6: no"
       } >>"$FILENAME"
+
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
 
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
