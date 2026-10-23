@@ -20,10 +20,13 @@ default_user="uav"
 default_password="f4f"
 default_hostname="uav1"
 
+tmp_dir=""
+keep_tmp_root_dir=true
+
 function cleanup_tmp_root_dir {
-    if ! $keep_tmp_root_dir; then
+    if ! $keep_tmp_root_dir && [ -n "$tmp_dir" ]; then
         echo "Cleaning up temporary files..."
-        sudo rm -rf "$TMP_ROOT_DIR"
+        sudo rm -rf "$tmp_dir"
     fi
 }
 
@@ -38,6 +41,8 @@ function download_with_fallback {
         fi
     done
 
+    # Do not leave a partial file behind, a later run would treat it as already downloaded
+    rm -f "$output_file"
     echo "Unable to download ${output_file}" >&2
     exit 1
 }
