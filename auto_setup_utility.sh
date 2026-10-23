@@ -172,7 +172,7 @@ main() {
 
     run_step "RUN_INSTALL_BASIC_PACKAGES" "Install basic packages" "$DIR/subscripts/2Install/1Install_basic_packages_(vim,_git,_curl,_ranger)_...sh" || exit 1
     run_step "RUN_INSTALL_DOCKER" "Install Docker" "$DIR/subscripts/2Install/6Install_Docker.sh" || exit 1
-    run_step "RUN_INSTALL_INTEL_WIFI_DRIVERS" "Install Intel WiFi drivers" "$DIR/subscripts/2Install/7Install_Intel_WiFi_drivers.sh" || exit 1
+    run_step "RUN_INSTALL_INTEL_WIFI_DRIVERS" "Install Intel WiFi drivers" "$DIR/subscripts/2Install/7Install_Intel_WiFi_drivers_(Ubuntu_20.04_on_Intel_NUC_only).sh" || exit 1
 
     run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
 
