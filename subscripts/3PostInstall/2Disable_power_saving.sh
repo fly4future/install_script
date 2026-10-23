@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+script_dir="$(dirname "$(realpath "$0")")"
+
 function disable_hibernation() {
     echo "Disabling hibernation"
     sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -27,7 +29,7 @@ function disable_wlan0_power_saving() {
         sudo iw wlan0 set power_save off
 
         # The setting does not persist across reboots, so we also create a systemd service to disable it on boot.
-        sudo cp subscripts/3PostInstall/DISREGARD/disable-wlan0-power_saving.service /etc/systemd/system/disable-wlan0-power_saving.service
+        sudo cp "$script_dir/DISREGARD/disable-wlan0-power_saving.service" /etc/systemd/system/disable-wlan0-power_saving.service
         sudo systemctl daemon-reload
         sudo systemctl enable --now disable-wlan0-power_saving.service
 
@@ -57,12 +59,16 @@ function disable_screen_dimming(){
 }
 
 function set_jetson_power_mode() {
+    if [[ "$(sudo nvpmodel -q | grep -E '^[0-9]+$')" == "3" ]]; then
+        echo "Jetson power mode is already set to 25W"
+        return 0
+    fi
+
     echo "Setting Jetson power mode to 25W. Reboot is required for the change to take effect."
 
     if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
         sudo nvpmodel --mode 3
     else
-        echo "Option 'Predictable network interface names' has been disabled. Rebooting..."
         sudo nvpmodel --mode 3 --force
     fi
 }

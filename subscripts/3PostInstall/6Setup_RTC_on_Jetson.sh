@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+script_dir="$(dirname "$(realpath "$0")")"
+
 # Check if we're running on an NVIDIA Jetson device.
 if ! grep -q "NVIDIA Jetson" /proc/device-tree/model >/dev/null 2>&1; then
     echo "ERROR: This script is intended to run on NVIDIA Jetson devices only."
@@ -11,7 +13,7 @@ fi
 # Verify hwclock command exists
 if ! command -v hwclock >/dev/null 2>&1; then
     echo "ERROR: hwclock not found. Installing it..."
-    apt-get update && apt-get install -y util-linux
+    sudo apt-get update && sudo apt-get install -y util-linux
 fi
 
 # In interactive mode we prompt the user to confirm they installed a RTC battery
@@ -24,8 +26,8 @@ echo "Writing system time to RTC..."
 sudo hwclock --systohc
 
 echo "Creating systemd services..."
-sudo cp subscripts/3PostInstall/DISREGARD/set_hw_time_from_sys.service /etc/systemd/system/set_hw_time_from_sys.service
-sudo cp subscripts/3PostInstall/DISREGARD/set_sys_time_from_hw.service /etc/systemd/system/set_sys_time_from_hw.service
+sudo cp "$script_dir/DISREGARD/set_hw_time_from_sys.service" /etc/systemd/system/set_hw_time_from_sys.service
+sudo cp "$script_dir/DISREGARD/set_sys_time_from_hw.service" /etc/systemd/system/set_sys_time_from_hw.service
 
 echo "Reloading systemd..."
 sudo systemctl daemon-reload
