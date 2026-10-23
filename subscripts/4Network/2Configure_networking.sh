@@ -2,8 +2,14 @@
 
 set -uo pipefail
 
+source "$(dirname "$(realpath "$0")")/DISREGARD_common/network_common.sh"
+
 TITLE="Network Config"
-FILENAME="/tmp/01-netcfg.yaml"
+TARGET_FILE="$NETPLAN_DIR/01-netcfg.yaml"
+
+# The generated config contains the Wi-Fi password, so keep it in a file only readable by the user
+FILENAME=$(mktemp)
+trap 'rm -f "$FILENAME"' EXIT
 
 yesno() {
   whiptail --title "$TITLE" --yesno "$1" 0 0
@@ -110,11 +116,17 @@ is_optional_interface() {
   [ "${CFG_DHCP4[$int]}" = "no" ] && [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "no" ]
 }
 
-delete_old_netplan_configs() {
-  if yesno "Are you sure you want to delete all *.yaml files in /etc/netplan/?"; then
-    sudo rm -f /etc/netplan/*.yaml
-    msgbox "Deleted all *.yaml files in /etc/netplan"
-  fi
+# Renames all netplan configs except the new one to *.yaml.bak.
+# Other configs would be merged with the new one and could override it, for example the renderer from a NetworkManager config.
+disable_other_netplan_configs() {
+  local file
+
+  for file in "$NETPLAN_DIR"/*.yaml; do
+    [ -e "$file" ] || continue
+    [ "$file" = "$TARGET_FILE" ] && continue
+
+    disable_netplan_config "$file"
+  done
 }
 
 get_current_interface_enabled() {
@@ -460,7 +472,6 @@ main_interface_menu() {
     # Blank separator line
     menu_items+=(" " " ")
 
-    menu_items+=("Cleanup" "Delete old netplan configs")
     menu_items+=("Save" "Generate netplan config and continue")
 
     local choice
@@ -481,10 +492,6 @@ main_interface_menu() {
         generate_netplan
         return
         ;;
-      "Cleanup")
-        delete_old_netplan_configs
-        ;;
-
       " ")
         # Blank separator line, ignore
         continue
@@ -699,8 +706,9 @@ copy_and_apply_netplan() {
   disable_network_manager
 
   echo "Copying netplan ..."
-  sudo cp "$FILENAME" /etc/netplan/01-netcfg.yaml
-  sudo chmod 600 /etc/netplan/01-netcfg.yaml
+  sudo install -m 600 "$FILENAME" "$TARGET_FILE"
+
+  disable_other_netplan_configs
 
   echo "Generating netplan ..."
   sudo netplan generate
@@ -744,7 +752,8 @@ interactive_mode() {
 
 $netplan_preview
 
-Save to /etc/netplan/01-netcfg.yaml and apply?"; then
+Save to $TARGET_FILE and apply?
+Other configs in $NETPLAN_DIR will be renamed to *.yaml.bak."; then
       # User selected Yes
       break
     else
@@ -755,13 +764,6 @@ Save to /etc/netplan/01-netcfg.yaml and apply?"; then
 }
 
 non_interactive_mode() {
-  if [ "${NETWORKING_DELETE_PREVIOUS_NETPLAN_CONFIGS:-}" = "true" ]; then
-    echo "Removing previous netplan configs"
-    sudo rm -f /etc/netplan/*.yaml
-  else
-    echo "Keeping previous netplan configs"
-  fi
-
   network_config="${NETWORKING_NETPLAN_CONFIG:-}"
 
   if [ -z "$network_config" ]; then
