@@ -40,16 +40,6 @@ msgbox() {
   whiptail --title "$TITLE" --msgbox "$1" 0 0
 }
 
-enable_systemd_networkd() {
-  sudo systemctl unmask systemd-networkd.socket systemd-networkd systemd-resolved
-  sudo systemctl enable --now systemd-networkd systemd-resolved
-}
-
-disable_network_manager() {
-  sudo systemctl disable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
-  sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
-}
-
 is_wifi_interface() {
   local int="$1"
   [[ "$int" =~ ^wlan[0-9]+$ ]]
@@ -699,22 +689,39 @@ Run the Network Interface Names Fix first and then restart this script."
 }
 
 copy_and_apply_netplan() {
-  echo "Enabling systemd-networkd ..."
-  enable_systemd_networkd
-
-  echo "Disabling NetworkManager ..."
-  disable_network_manager
+  echo "Backing up current network configuration ..."
+  prepare_revert
 
   echo "Copying netplan ..."
   sudo install -m 600 "$FILENAME" "$TARGET_FILE"
 
   disable_other_netplan_configs
 
+  # Check the config before changing anything that could cut the network connection
   echo "Generating netplan ..."
-  sudo netplan generate
+  if ! sudo netplan generate; then
+    echo "The netplan config is not valid, restoring the previous config. Nothing was changed."
+    restore_netplan_files
+    return 1
+  fi
 
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    schedule_revert
+  fi
+
+  echo "Enabling systemd-networkd and disabling NetworkManager ..."
   echo "Applying netplan ..."
-  sudo netplan apply
+  if ! use_systemd_networkd || ! sudo netplan apply; then
+    echo "Applying the netplan config failed"
+    revert_now
+    return 1
+  fi
+
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    confirm_or_revert || return 1
+  else
+    sudo rm -rf "$REVERT_DIR"
+  fi
 
   echo "Done"
 }
@@ -753,7 +760,9 @@ interactive_mode() {
 $netplan_preview
 
 Save to $TARGET_FILE and apply?
-Other configs in $NETPLAN_DIR will be renamed to *.yaml.bak."; then
+Other configs in $NETPLAN_DIR will be renamed to *.yaml.bak.
+
+After the config is applied, press Enter in this terminal within $((REVERT_TIMEOUT - 10)) seconds to keep it, otherwise the previous config is restored. If this terminal loses its connection because of the change, log in again, any new login confirms the config."; then
       # User selected Yes
       break
     else
@@ -785,7 +794,7 @@ main() {
   fi
 
   copy_and_apply_netplan
-  exit 0
+  exit $?
 }
 
 main "$@"
