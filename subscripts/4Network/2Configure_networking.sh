@@ -2,8 +2,14 @@
 
 set -uo pipefail
 
+source "$(dirname "$(realpath "$0")")/DISREGARD_common/network_common.sh"
+
 TITLE="Network Config"
-FILENAME="/tmp/01-netcfg.yaml"
+TARGET_FILE="$NETPLAN_DIR/01-netcfg.yaml"
+
+# The generated config contains the Wi-Fi password, so keep it in a file only readable by the user
+FILENAME=$(mktemp)
+trap 'rm -f "$FILENAME"' EXIT
 
 yesno() {
   whiptail --title "$TITLE" --yesno "$1" 0 0
@@ -13,9 +19,9 @@ input_box() {
   local prompt="$1"
   local default_value="${2:-}"
 
-  local tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
-
-  local ret_val=$?
+  local tmp
+  local ret_val=0
+  tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3) || ret_val=$?
 
   if [ "$ret_val" -eq 255 ]; then
     exit 1
@@ -32,16 +38,6 @@ input_box() {
 
 msgbox() {
   whiptail --title "$TITLE" --msgbox "$1" 0 0
-}
-
-enable_systemd_networkd() {
-  sudo systemctl unmask systemd-networkd systemd-resolved
-  sudo systemctl enable --now systemd-networkd systemd-resolved
-}
-
-disable_network_manager() {
-  sudo systemctl disable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
-  sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
 }
 
 is_wifi_interface() {
@@ -104,11 +100,23 @@ get_default_wifi_password() {
   echo "mikrokopter"
 }
 
-delete_old_netplan_configs() {
-  if yesno "Are you sure you want to delete all *.yaml files in /etc/netplan/?"; then
-    sudo rm -f /etc/netplan/*.yaml
-    msgbox "Deleted all *.yaml files in /etc/netplan"
-  fi
+# We don't need to wait for interfaces without a route to the internet when booting
+is_optional_interface() {
+  local int="$1"
+  [ "${CFG_DHCP4[$int]}" = "no" ] && [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "no" ]
+}
+
+# Renames all netplan configs except the new one to *.yaml.bak.
+# Other configs would be merged with the new one and could override it, for example the renderer from a NetworkManager config.
+disable_other_netplan_configs() {
+  local file
+
+  for file in "$NETPLAN_DIR"/*.yaml; do
+    [ -e "$file" ] || continue
+    [ "$file" = "$TARGET_FILE" ] && continue
+
+    disable_netplan_config "$file"
+  done
 }
 
 get_current_interface_enabled() {
@@ -391,12 +399,14 @@ Choose option to edit:"
       ;;
 
     "Static address")
-      local tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
       CFG_ADDRESS["$int"]="$tmp"
       ;;
 
     "CIDR prefix")
-      local tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
       CFG_PREFIX["$int"]="$tmp"
       ;;
 
@@ -409,27 +419,32 @@ Choose option to edit:"
       ;;
 
     "Default gateway")
-      local tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
       CFG_GATEWAY["$int"]="$tmp"
       ;;
 
     "Metric")
-      local tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
       CFG_METRIC["$int"]="$tmp"
       ;;
 
     "DNS server")
-      local tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
       CFG_DNS["$int"]="$tmp"
       ;;
 
     "Wi-Fi SSID")
-      local tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
       CFG_SSID["$int"]="$tmp"
       ;;
 
     "Wi-Fi password")
-      local tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
       CFG_PASSWORD["$int"]="$tmp"
       ;;
     esac
@@ -447,7 +462,6 @@ main_interface_menu() {
     # Blank separator line
     menu_items+=(" " " ")
 
-    menu_items+=("Cleanup" "Delete old netplan configs")
     menu_items+=("Save" "Generate netplan config and continue")
 
     local choice
@@ -468,10 +482,6 @@ main_interface_menu() {
         generate_netplan
         return
         ;;
-      "Cleanup")
-        delete_old_netplan_configs
-        ;;
-
       " ")
         # Blank separator line, ignore
         continue
@@ -528,6 +538,10 @@ generate_netplan() {
         echo "      dhcp6: no"
       } >>"$FILENAME"
 
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
+
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
           echo "      addresses:"
@@ -564,6 +578,10 @@ generate_netplan() {
         echo "      dhcp4: ${CFG_DHCP4[$int]}"
         echo "      dhcp6: no"
       } >>"$FILENAME"
+
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
 
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
@@ -671,21 +689,39 @@ Run the Network Interface Names Fix first and then restart this script."
 }
 
 copy_and_apply_netplan() {
-  echo "Enabling systemd-networkd ..."
-  enable_systemd_networkd
-
-  echo "Disabling NetworkManager ..."
-  disable_network_manager
+  echo "Backing up current network configuration ..."
+  prepare_revert
 
   echo "Copying netplan ..."
-  sudo cp "$FILENAME" /etc/netplan/01-netcfg.yaml
-  sudo chmod 600 /etc/netplan/01-netcfg.yaml
+  sudo install -m 600 "$FILENAME" "$TARGET_FILE"
 
+  disable_other_netplan_configs
+
+  # Check the config before changing anything that could cut the network connection
   echo "Generating netplan ..."
-  sudo netplan generate
+  if ! sudo netplan generate; then
+    echo "The netplan config is not valid, restoring the previous config. Nothing was changed."
+    restore_netplan_files
+    return 1
+  fi
 
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    schedule_revert
+  fi
+
+  echo "Enabling systemd-networkd and disabling NetworkManager ..."
   echo "Applying netplan ..."
-  sudo netplan apply
+  if ! use_systemd_networkd || ! sudo netplan apply; then
+    echo "Applying the netplan config failed"
+    revert_now
+    return 1
+  fi
+
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    confirm_or_revert || return 1
+  else
+    sudo rm -rf "$REVERT_DIR"
+  fi
 
   echo "Done"
 }
@@ -723,7 +759,10 @@ interactive_mode() {
 
 $netplan_preview
 
-Save to /etc/netplan/01-netcfg.yaml and apply?"; then
+Save to $TARGET_FILE and apply?
+Other configs in $NETPLAN_DIR will be renamed to *.yaml.bak.
+
+After the config is applied, press Enter in this terminal within $((REVERT_TIMEOUT - 10)) seconds to keep it, otherwise the previous config is restored. If this terminal loses its connection because of the change, log in again and confirm with:\n\n  sudo systemctl stop $REVERT_UNIT.timer"; then
       # User selected Yes
       break
     else
@@ -734,13 +773,6 @@ Save to /etc/netplan/01-netcfg.yaml and apply?"; then
 }
 
 non_interactive_mode() {
-  if [ "${NETWORKING_DELETE_PREVIOUS_NETPLAN_CONFIGS:-}" = "true" ]; then
-    echo "Removing previous netplan configs"
-    sudo rm -f /etc/netplan/*.yaml
-  else
-    echo "Keeping previous netplan configs"
-  fi
-
   network_config="${NETWORKING_NETPLAN_CONFIG:-}"
 
   if [ -z "$network_config" ]; then
@@ -762,7 +794,7 @@ main() {
   fi
 
   copy_and_apply_netplan
-  exit 0
+  exit $?
 }
 
 main "$@"
