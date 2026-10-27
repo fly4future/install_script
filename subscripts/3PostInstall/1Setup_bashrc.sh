@@ -7,7 +7,7 @@ add_var_to_bashrc () {
   #arg2 - what is the default value for the parameter
   #arg3 - description of this variable
 
-  bashrc_content=$(grep "export $1=" ~/.bashrc)
+  bashrc_content=$(grep -m 1 "^export $1=" ~/.bashrc || true)
   var_name=""
   var_value=""
 
@@ -18,14 +18,11 @@ add_var_to_bashrc () {
     var_value=$2;
   else
     #variable is in bashrc, we are now showing its current value
-    IFS='='
-    read -a strarr <<< "$bashrc_content"
-    var_name=${strarr[0]};
-    var_value=${strarr[1]};
+    var_name=$1;
+    var_value=${bashrc_content#*=};
   fi
-  new_value=$(whiptail --inputbox "$3\n $var_name=" 0 0 "$var_value" --title "Bashrc variable setup" --cancel-button "Skip"  3>&1 1>&2 2>&3)
-
-  ret_val=$?
+  ret_val=0
+  new_value=$(whiptail --inputbox "$3\n $var_name=" 0 0 "$var_value" --title "Bashrc variable setup" --cancel-button "Skip"  3>&1 1>&2 2>&3) || ret_val=$?
 
   #strip any quotes, they are not necessary
   new_value=$(echo "$new_value" | sed "s/[\"\']//g")
@@ -34,7 +31,7 @@ add_var_to_bashrc () {
     exit 1
   fi
   if [ $ret_val -eq 1 ]; then
-    return 1
+    return 0
   else
     if [ -z "$bashrc_content" ]
     then
@@ -42,7 +39,7 @@ add_var_to_bashrc () {
       echo -e "export $1=$new_value" >> ~/.bashrc
     else
       #variable is in bashrc, we are editing it
-      sed -i "/export $1/c\export $1=$new_value" ~/.bashrc
+      sed -i "/^export $1=/c\export $1=$new_value" ~/.bashrc
     fi
   fi
   clear
@@ -53,7 +50,7 @@ add_var_to_bashrc_quotes () {
   #arg2 - what is the default value for the parameter
   #arg3 - description of this variable
 
-  bashrc_content=$(grep "export $1=" ~/.bashrc)
+  bashrc_content=$(grep -m 1 "^export $1=" ~/.bashrc || true)
   var_name=""
   var_value=""
 
@@ -64,14 +61,11 @@ add_var_to_bashrc_quotes () {
     var_value=$2;
   else
     #variable is in bashrc, we are now showing its current value
-    IFS='='
-    read -a strarr <<< "$bashrc_content"
-    var_name=${strarr[0]};
-    var_value=${strarr[1]};
+    var_name=$1;
+    var_value=${bashrc_content#*=};
   fi
-  new_value=$(whiptail --inputbox "$3\n $var_name=" 0 0 "$var_value" --title "Bashrc variable setup" --cancel-button "Skip"  3>&1 1>&2 2>&3)
-
-  ret_val=$?
+  ret_val=0
+  new_value=$(whiptail --inputbox "$3\n $var_name=" 0 0 "$var_value" --title "Bashrc variable setup" --cancel-button "Skip"  3>&1 1>&2 2>&3) || ret_val=$?
 
   #strip any quotes, they will be added later
   new_value=$(echo "$new_value" | sed "s/[\"\']//g")
@@ -80,7 +74,7 @@ add_var_to_bashrc_quotes () {
     exit 1
   fi
   if [ $ret_val -eq 1 ]; then
-    return 1
+    return 0
   else
     if [ -z "$bashrc_content" ]
     then
@@ -88,7 +82,7 @@ add_var_to_bashrc_quotes () {
       echo -e "export $1=\"$new_value\"" >> ~/.bashrc
     else
       #variable is in bashrc, we are editing it
-      sed -i "/export $1/c\export $1=\"$new_value\"" ~/.bashrc
+      sed -i "/^export $1=/c\export $1=\"$new_value\"" ~/.bashrc
     fi
   fi
   clear
