@@ -70,7 +70,7 @@ get_udev_value() {
   udevadm info "/dev/$device" | grep "$key" | head -n 1 | sed -e "s/^.*=//"
 }
 
-choose_mrs_board() {
+choose_distribution_board() {
   # Shows a dialog with a list of .rules files from the DISREGARD_udev_rules directory and allows the user to select one
   template_file=$(choose_frame_template)
 
@@ -149,7 +149,7 @@ choose_where_write_rules() {
   # If a file with that name already exists, the script asks if the user wants to overwrite the file
   write_mode=$(choose_write_mode "Udev config" "How do you want to store these udev rules?")
   if [ "$write_mode" = "new" ]; then
-    target_file_name=$(input_box "What should the new udev rules file be named?" "99-usb-serial-MRS.rules")
+    target_file_name=$(input_box "What should the new udev rules file be named?" "99-usb-serial-F4F.rules")
     if [ -z "$target_file_name" ]; then
       exit 1
     fi
@@ -184,11 +184,11 @@ tmp_file=$(mktemp)
 trap 'rm -f "$tmp_file"' EXIT # Ensure the temp file is removed when the script exits
 
 # Ask if the user has a distribution board
-yesno_def_yes "Do you have a MRS distribution board with existing udev .rules file?"
+yesno_def_yes "Do you have a distribution board with existing udev .rules file?"
 ret_val=$?
 
 if [ $ret_val -eq 0 ]; then
-  choose_mrs_board
+  choose_distribution_board
 fi
 
 # Ask if the user wants to add rules for connected devices (ttyUSBx, ttyACMx, ttyTHSx)
@@ -208,7 +208,7 @@ fi
 # Ask the user where they want to write the rules (new file, overwrite existing file, append to existing file)
 choose_where_write_rules
 
-sed -i '1s/^/# Following lines were added by MRS UAV System Install utility:\n/' $tmp_file
+sed -i '1s/^/# Following lines were added by F4F Install Utility:\n/' $tmp_file
 
 yesno_def_yes "Write the following rules to this file?\nTarget: $target_file\n\nNew rules:\n$(cat "$tmp_file")"
 ret_val=$?
