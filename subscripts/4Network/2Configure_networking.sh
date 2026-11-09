@@ -58,11 +58,7 @@ get_default_ip_for_interface() {
   local int="$1"
 
   if is_wifi_interface "$int"; then
-    if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
-      echo "192.168.12.101"
-    else
-      echo "192.168.69.101"
-    fi
+    echo "192.168.12.101"
   else
     echo "10.10.20.101"
   fi
@@ -72,11 +68,7 @@ get_default_gateway_for_interface() {
   local int="$1"
 
   if is_wifi_interface "$int"; then
-    if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
-      echo "192.168.12.1"
-    else
-      echo "192.168.69.1"
-    fi
+    echo "192.168.12.1"
   else
     echo "10.10.20.1"
   fi
@@ -93,11 +85,7 @@ get_metric_for_interface() {
 }
 
 get_default_ssid() {
-  if [[ "${USE_DEFAULTS_FOR:-}" == "F4F" ]]; then
-    echo "f4f_robot"
-  else
-    echo "mrs_ctu"
-  fi
+  echo "f4f_robot"
 }
 
 get_default_wifi_password() {

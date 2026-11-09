@@ -14,10 +14,10 @@ OPTIONS2=(
 
 
 show_menu() {
-  whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
+  whiptail --title "F4F Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS[@]}" 3>&1 1>&2 2>&3
 }
 show_menu2() {
-  whiptail --title "MRS UAV System Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS2[@]}" 3>&1 1>&2 2>&3
+  whiptail --title "F4F Install Utility" --menu "Choose an option:" 0 0 0 "${OPTIONS2[@]}" 3>&1 1>&2 2>&3
 }
 
 main() {

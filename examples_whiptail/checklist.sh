@@ -8,7 +8,7 @@ CHOICES=(
 )
 
 # Pass choices variable to whiptail
-SELECTIONS=$(whiptail --separate-output --title "MRS UAV System Install Utility" --checklist "Choose options by pressing the spacebar" 0 0 0 "${CHOICES[@]}" 3>&1 1>&2 2>&3)
+SELECTIONS=$(whiptail --separate-output --title "F4F Install Utility" --checklist "Choose options by pressing the spacebar" 0 0 0 "${CHOICES[@]}" 3>&1 1>&2 2>&3)
 
 echo "$SELECTIONS"
 

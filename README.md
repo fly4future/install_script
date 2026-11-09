@@ -1,6 +1,6 @@
 # Install script
 
-This repository contains scripts for flashing and configuring computers for use in F4F/MRS.
+This repository contains scripts for flashing and configuring computers for use in F4F.
 
 ## Configuration utility
 
@@ -32,7 +32,6 @@ Note that not all functionality of the manual setup utilities is available in th
 
 - Switching from `networkd` back to `NetworkManager`, since it is only there for debugging purposes
 - Installation and uninstallation of ROS without docker (directly with `apt`). This can be implemented in the future.
-- MRS internal only configuration. Can be implemented in the future.
 - Disregarded scripts
 
 ## Flashing Jetson devices

@@ -14,7 +14,6 @@ add_to_bashrc () { #arg1 - what should we look for in .bashrc; arg2 - what shoul
 CHOICES=(
   "1" "Add mrs_uav_deployment (Necessary for real UAVs)" ON
   "2" "Add mrs_core_examples (example nodes which demonstrate system functionality)" ON
-  "3" "Add mrs_uav_development (MRS only, bash additions for development)" OFF
 )
 
 
@@ -26,7 +25,7 @@ if [ $ret_val -ne 0 ]; then
 fi
 
 # Pass choices variable to whiptail
-SELECTIONS=$(whiptail --separate-output --title "MRS UAV System Install Utility" --checklist "Choose options by pressing the spacebar" 0 0 0 "${CHOICES[@]}" 3>&1 1>&2 2>&3)
+SELECTIONS=$(whiptail --separate-output --title "F4F Install Utility" --checklist "Choose options by pressing the spacebar" 0 0 0 "${CHOICES[@]}" 3>&1 1>&2 2>&3)
 
 ret_val=$?
 
@@ -70,13 +69,6 @@ for CHOICE in $SELECTIONS; do
       git checkout ros2
       cd ..
       ln -sfn ~/git/mrs_core_examples ~/$WORKSPACE_NAME/src/mrs_core_examples
-      ;;
-    "3") [ -d mrs_uav_development ] || git clone https://github.com/ctu-mrs/mrs_uav_development.git
-      cd mrs_uav_development
-      git checkout ros2
-      cd ..
-      ln -sfn ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/mrs_uav_development
-      add_to_bashrc "source ~/git/mrs_uav_development/shell_additions/shell_additions.sh" "\nsource ~/git/mrs_uav_development/shell_additions/shell_additions.sh"
       ;;
     *)
       exit 1
