@@ -58,18 +58,38 @@ function disable_screen_dimming(){
     gsettings set org.gnome.desktop.session idle-delay 0
 }
 
+# Mode IDs don't follow power and differ between modules and firmwares, so the wattage is taken from the mode name
+# (e.g. 25W or MODE_30W). Modes without a wattage, such as MAXN, are ignored on purpose because they have no power cap
+# and can cause overheating and throttling.
+function get_highest_jetson_power_mode() {
+    sed -nE 's/^< *POWER_MODEL ID=([0-9]+) NAME=([^ >]+).*/\1 \2/p' /etc/nvpmodel.conf | awk '
+    match($2, /[0-9]+W/) {
+        watts = substr($2, RSTART, RLENGTH - 1) + 0
+        if (watts > best) { best = watts; mode = $1 " " $2 }
+    }
+    END { print mode }'
+}
+
 function set_jetson_power_mode() {
-    if [[ "$(sudo nvpmodel -q | grep -E '^[0-9]+$')" == "3" ]]; then
-        echo "Jetson power mode is already set to 25W"
+    local mode_id mode_name
+    read -r mode_id mode_name <<<"$(get_highest_jetson_power_mode)"
+
+    if [[ -z "$mode_id" ]]; then
+        echo "No power mode with a wattage found in /etc/nvpmodel.conf, leaving the Jetson power mode unchanged."
         return 0
     fi
 
-    echo "Setting Jetson power mode to 25W. Reboot is required for the change to take effect."
+    if [[ "$(sudo nvpmodel -q | grep -E '^[0-9]+$')" == "$mode_id" ]]; then
+        echo "Jetson power mode is already set to $mode_name"
+        return 0
+    fi
+
+    echo "Setting Jetson power mode to $mode_name (mode $mode_id). Reboot is required for the change to take effect."
 
     if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
-        sudo nvpmodel --mode 3
+        sudo nvpmodel --mode "$mode_id"
     else
-        sudo nvpmodel --mode 3 --force
+        sudo nvpmodel --mode "$mode_id" --force
     fi
 }
 
