@@ -171,8 +171,9 @@ main() {
     run_step "RUN_UPDATE_SYSTEM_AND_ROS" "Update system and ROS" "$DIR/subscripts/1Update/2Update_system_and_baremetal_ROS.sh" || exit 1
 
     run_step "RUN_INSTALL_BASIC_PACKAGES" "Install basic packages" "$DIR/subscripts/2Install/1Install_basic_packages_(vim,_git,_curl,_ranger)_...sh" || exit 1
-    run_step "RUN_INSTALL_DOCKER" "Install Docker" "$DIR/subscripts/2Install/6Install_Docker.sh" || exit 1
-    run_step "RUN_INSTALL_INTEL_WIFI_DRIVERS" "Install Intel WiFi drivers" "$DIR/subscripts/2Install/7Install_Intel_WiFi_drivers_(Ubuntu_20.04_on_Intel_NUC_only).sh" || exit 1
+    run_step "RUN_INSTALL_SSH_SERVER" "Install SSH server" "$DIR/subscripts/2Install/2Install_SSH_server.sh" || exit 1
+    run_step "RUN_INSTALL_DOCKER" "Install Docker" "$DIR/subscripts/2Install/3Install_Docker.sh" || exit 1
+    run_step "RUN_INSTALL_INTEL_WIFI_DRIVERS" "Install Intel WiFi drivers" "$DIR/subscripts/2Install/8Install_Intel_WiFi_drivers_(Ubuntu_20.04_on_Intel_NUC_only).sh" || exit 1
 
     run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
 
