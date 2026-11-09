@@ -1,2 +1,0 @@
-event=button/power.*
-action=/etc/acpi/power_button_handler.sh
