@@ -177,7 +177,6 @@ main() {
     run_step "RUN_FIX_NETWORK_INTERFACE_NAMES" "Fix network interface names" "$DIR/subscripts/4Network/1Fix_network_interface_names.sh" || exit 1
 
     run_step "RUN_DISABLE_POWER_SAVING" "Disable power saving" "$DIR/subscripts/3PostInstall/2Disable_power_saving.sh" || exit 1
-    run_step "RUN_GENERATE_SSH_CONFIG" "Generate SSH config" "$DIR/subscripts/3PostInstall/3Generate_SSH_config.sh" || exit 1
     run_step "RUN_SET_SWAP_16GB" "Set swap to 16GB" "$DIR/subscripts/3PostInstall/4Set_Swap_to_16GB.sh" || exit 1
     run_step "RUN_CLEANUP_HOME_DIRECTORY" "Cleanup home directory" "$DIR/subscripts/3PostInstall/5Cleanup_home_directory.sh" || exit 1
     run_step "RUN_SETUP_RTC_ON_JETSON" "Setup RTC on Jetson" "$DIR/subscripts/3PostInstall/6Setup_RTC_on_Jetson.sh" || exit 1
