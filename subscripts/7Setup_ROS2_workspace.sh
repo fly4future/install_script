@@ -42,41 +42,40 @@ echo "Setting up ~/$WORKSPACE_NAME..."
 source /opt/ros/jazzy/setup.bash             # source the general ROS workspace so that the local one will extend it and see all the packages
 mkdir -p ~/$WORKSPACE_NAME/src && cd ~/$WORKSPACE_NAME    # create the workspace folder in home and cd to it
 sudo apt-get install -y python3-colcon-mixin
-colcon init
-colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml || echo "Mixin repository 'default' already added"
 colcon mixin update default
-colcon mixin add mrs https://raw.githubusercontent.com/ctu-mrs/mrs_uav_development/refs/heads/ros2/mixin/index.yaml
-colcon mixin mrs default
+colcon mixin add mrs https://raw.githubusercontent.com/ctu-mrs/mrs_uav_development/refs/heads/ros2/mixin/index.yaml || echo "Mixin repository 'mrs' already added"
+colcon mixin update mrs
 # Create colcon defaults.yaml file with build options
 mkdir -p ~/$WORKSPACE_NAME/.colcon
-cat <<EOT >> ~/$WORKSPACE_NAME/colcon_defaults.yaml
+cat <<EOT > ~/$WORKSPACE_NAME/colcon_defaults.yaml
 build:
   parallel-workers: 8
   mixin:
     - rel-with-deb-info
 EOT
 
-mkdir ~/git
+mkdir -p ~/git
 cd ~/git
 for CHOICE in $SELECTIONS; do
   case "$CHOICE" in
-    "1") git clone https://github.com/ctu-mrs/mrs_uav_deployment.git
+    "1") [ -d mrs_uav_deployment ] || git clone https://github.com/ctu-mrs/mrs_uav_deployment.git
       cd mrs_uav_deployment
       git checkout ros2
       cd ..
-      ln -s ~/git/mrs_uav_deployment ~/$WORKSPACE_NAME/src/
+      ln -sfn ~/git/mrs_uav_deployment ~/$WORKSPACE_NAME/src/mrs_uav_deployment
       ;;
-    "2") git clone https://github.com/ctu-mrs/mrs_core_examples.git
+    "2") [ -d mrs_core_examples ] || git clone https://github.com/ctu-mrs/mrs_core_examples.git
       cd mrs_core_examples
       git checkout ros2
       cd ..
-      ln -s ~/git/mrs_core_examples ~/$WORKSPACE_NAME/src/
+      ln -sfn ~/git/mrs_core_examples ~/$WORKSPACE_NAME/src/mrs_core_examples
       ;;
-    "3") git clone https://github.com/ctu-mrs/mrs_uav_development.git
+    "3") [ -d mrs_uav_development ] || git clone https://github.com/ctu-mrs/mrs_uav_development.git
       cd mrs_uav_development
       git checkout ros2
       cd ..
-      ln -s ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/
+      ln -sfn ~/git/mrs_uav_development ~/$WORKSPACE_NAME/src/mrs_uav_development
       add_to_bashrc "source ~/git/mrs_uav_development/shell_additions/shell_additions.sh" "\nsource ~/git/mrs_uav_development/shell_additions/shell_additions.sh"
       ;;
     *)
