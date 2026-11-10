@@ -2,8 +2,14 @@
 
 set -uo pipefail
 
+source "$(dirname "$(realpath "$0")")/DISREGARD_common/network_common.sh"
+
 TITLE="Network Config"
-FILENAME="/tmp/01-netcfg.yaml"
+TARGET_FILE="$NETPLAN_DIR/01-netcfg.yaml"
+
+# The generated config contains the Wi-Fi password, so keep it in a file only readable by the user
+FILENAME=$(mktemp)
+trap 'rm -f "$FILENAME"' EXIT
 
 yesno() {
   whiptail --title "$TITLE" --yesno "$1" 0 0
@@ -13,9 +19,9 @@ input_box() {
   local prompt="$1"
   local default_value="${2:-}"
 
-  local tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3)
-
-  local ret_val=$?
+  local tmp
+  local ret_val=0
+  tmp=$(whiptail --title "$TITLE" --inputbox "$prompt" 0 0 "$default_value" 3>&1 1>&2 2>&3) || ret_val=$?
 
   if [ "$ret_val" -eq 255 ]; then
     exit 1
@@ -32,16 +38,6 @@ input_box() {
 
 msgbox() {
   whiptail --title "$TITLE" --msgbox "$1" 0 0
-}
-
-enable_systemd_networkd() {
-  sudo systemctl unmask systemd-networkd systemd-resolved
-  sudo systemctl enable --now systemd-networkd systemd-resolved
-}
-
-disable_network_manager() {
-  sudo systemctl disable --now NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
-  sudo systemctl mask NetworkManager NetworkManager-wait-online NetworkManager-dispatcher 2>/dev/null || true
 }
 
 is_wifi_interface() {
@@ -104,178 +100,204 @@ get_default_wifi_password() {
   echo "mikrokopter"
 }
 
-delete_old_netplan_configs() {
-  if yesno "Are you sure you want to delete all *.yaml files in /etc/netplan/?"; then
-    sudo rm -f /etc/netplan/*.yaml
-    msgbox "Deleted all *.yaml files in /etc/netplan"
+# We don't need to wait for interfaces without a route to the internet when booting
+is_optional_interface() {
+  local int="$1"
+  [ "${CFG_DHCP4[$int]}" = "no" ] && [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "no" ]
+}
+
+# Renames all netplan configs except the new one to *.yaml.bak.
+# Other configs would be merged with the new one and could override it, for example the renderer from a NetworkManager config.
+disable_other_netplan_configs() {
+  local file
+
+  for file in "$NETPLAN_DIR"/*.yaml; do
+    [ -e "$file" ] || continue
+    [ "$file" = "$TARGET_FILE" ] && continue
+
+    disable_netplan_config "$file"
+  done
+}
+
+# Prints the configured settings of an interface from netplan as key=value lines
+read_netplan_config() {
+  local int="$1"
+  local section="ethernets"
+
+  if is_wifi_interface "$int"; then
+    section="wifis"
   fi
-}
 
-get_current_interface_enabled() {
-  local int="$1"
+  # netplan get prints the config normalized, with top level keys at the start of the line
+  sudo netplan get "network.$section.$int" 2>/dev/null | awk '
+    function unquote(s) {
+      gsub(/^[[:space:]]*"?|"?[[:space:]]*$/, "", s)
+      return s
+    }
 
-  if [[ -r "/sys/class/net/$int/flags" ]]; then
-    local flags
-    flags=$(<"/sys/class/net/$int/flags")
-
-    if ((flags & 0x1)); then
-      echo "yes"
-    else
-      echo "no"
-    fi
-  else
-    echo "no"
-  fi
-}
-
-get_current_dhcp4() {
-  local int="$1"
-  local address_flags
-
-  # Addresses obtained by DHCP are normally marked "dynamic" by the kernel.
-  address_flags=$(ip -o -4 address show dev "$int" scope global 2>/dev/null || true)
-
-  if [[ "$address_flags" == *" dynamic "* ]]; then
-    echo "yes"
-  elif [[ -n "$address_flags" ]]; then
-    echo "no"
-  else
-    # Preserve original behavior when no current information exists.
-    echo "yes"
-  fi
-}
-
-get_current_address_and_prefix() {
-  local int="$1"
-  local address_with_prefix
-
-  address_with_prefix=$(
-    ip -o -4 address show dev "$int" scope global 2>/dev/null |
-      awk 'NR == 1 { print $4 }'
-  )
-
-  printf '%s\n' "$address_with_prefix"
-}
-
-get_current_gateway() {
-  local int="$1"
-
-  ip -4 route show default dev "$int" 2>/dev/null |
-    awk '
-      NR == 1 {
-        for (i = 1; i <= NF; i++) {
-          if ($i == "via" && (i + 1) <= NF) {
-            print $(i + 1)
-            exit
-          }
-        }
+    function print_default_route() {
+      if ((route_to == "default" || route_to == "0.0.0.0/0") && route_via != "" && !has_gateway) {
+        print "gateway=" route_via
+        print "metric=" route_metric
+        has_gateway = 1
       }
-    '
+      route_to = route_via = route_metric = ""
+    }
+
+    $0 == "null" { exit }
+    NR == 1 { print "enabled=yes" }
+
+    /^[^ -]/ {
+      if (block == "routes") print_default_route()
+      block = $1
+      sub(/:$/, "", block)
+    }
+
+    block == "dhcp4" { print "dhcp4=" ($2 == "true" ? "yes" : "no") }
+    block == "gateway4" && !has_gateway { print "gateway=" unquote($2); has_gateway = 1 }
+    block == "addresses" && /^- / && !has_address { print "address=" unquote($2); has_address = 1 }
+
+    block == "routes" {
+      line = $0
+      if (sub(/^- /, "", line)) print_default_route()
+      split(line, kv, ":")
+      key = unquote(kv[1])
+      value = unquote(substr(line, index(line, ":") + 1))
+      if (key == "to") route_to = value
+      if (key == "via") route_via = value
+      if (key == "metric") route_metric = value
+    }
+
+    block == "nameservers" && /^  [a-z]/ { nameservers_key = $1 }
+    block == "nameservers" && nameservers_key == "addresses:" && /^  - / && !has_dns { print "dns=" unquote($2); has_dns = 1 }
+
+    block == "access-points" && /^  [^ ]/ && !has_ssid { ssid = $0; sub(/:[[:space:]]*$/, "", ssid); print "ssid=" unquote(ssid); has_ssid = 1 }
+    block == "access-points" && /^ +password:/ && !has_password { print "password=" unquote(substr($0, index($0, ":") + 1)); has_password = 1 }
+
+    END { if (block == "routes") print_default_route() }
+  '
 }
 
-get_current_metric() {
+# Prints the configured settings of an interface from NetworkManager as key=value lines
+read_network_manager_config() {
   local int="$1"
+  local uuid
+  local candidate
 
-  ip -4 route show default dev "$int" 2>/dev/null |
-    awk '
-      NR == 1 {
-        for (i = 1; i <= NF; i++) {
-          if ($i == "metric" && (i + 1) <= NF) {
-            print $(i + 1)
-            exit
-          }
-        }
-      }
-    '
+  # The active connection, or the first one bound to the interface, for example when the cable is unplugged
+  uuid=$(nmcli -g GENERAL.CON-UUID device show "$int" 2>/dev/null)
+
+  if [ -z "$uuid" ]; then
+    while read -r candidate; do
+      if [ "$(nmcli -g connection.interface-name connection show "$candidate" 2>/dev/null)" = "$int" ]; then
+        uuid="$candidate"
+        break
+      fi
+    done < <(nmcli -g UUID connection show 2>/dev/null)
+  fi
+
+  [ -n "$uuid" ] || return 0
+
+  local method address gateway metric dns
+  {
+    read -r method
+    read -r address
+    read -r gateway
+    read -r metric
+    read -r dns
+  } < <(nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.route-metric,ipv4.dns connection show "$uuid")
+
+  case "$method" in
+  auto) echo "dhcp4=yes" ;;
+  manual) echo "dhcp4=no" ;;
+  *) return 0 ;;
+  esac
+
+  echo "enabled=yes"
+  echo "address=${address%%,*}"
+  echo "dns=${dns%%,*}"
+
+  if [ -n "$gateway" ]; then
+    echo "gateway=$gateway"
+    [ "$metric" = "-1" ] || echo "metric=$metric"
+  fi
+
+  if is_wifi_interface "$int"; then
+    echo "ssid=$(nmcli -g 802-11-wireless.ssid connection show "$uuid")"
+    echo "password=$(sudo nmcli -s -g 802-11-wireless-security.psk connection show "$uuid" 2>/dev/null)"
+  fi
 }
 
-get_current_dns() {
+# Prints "up" if the interface has a cable plugged in or is connected to a Wi-Fi network, "down" otherwise
+get_link_state() {
   local int="$1"
-  local dns=""
 
-  if command -v resolvectl >/dev/null 2>&1; then
-    dns=$(
-      resolvectl dns "$int" 2>/dev/null |
-        awk -F: '
-          NR == 1 {
-            sub(/^[[:space:]]+/, "", $2)
-            split($2, addresses, /[[:space:]]+/)
-            print addresses[1]
-          }
-        '
-    )
+  if [ "$(cat "/sys/class/net/$int/operstate" 2>/dev/null)" = "up" ]; then
+    echo "up"
+  else
+    echo "down"
   fi
-
-  printf '%s\n' "$dns"
 }
 
-get_current_ssid() {
+# Prints the address the interface currently has from DHCP, if any
+get_dhcp_address() {
   local int="$1"
-  local ssid=""
 
-  if command -v iwgetid >/dev/null 2>&1; then
-    ssid=$(iwgetid "$int" --raw 2>/dev/null || true)
-  fi
-
-  if [[ -z "$ssid" ]] && command -v iw >/dev/null 2>&1; then
-    ssid=$(
-      iw dev "$int" link 2>/dev/null |
-        sed -n 's/^[[:space:]]*SSID: //p' |
-        head -n 1
-    )
-  fi
-
-  printf '%s\n' "$ssid"
+  ip -o -4 address show dev "$int" scope global dynamic 2>/dev/null | awk 'NR == 1 { print $4 }'
 }
 
 init_interface_defaults() {
   local int="$1"
-  local current_address_with_prefix=""
-  local current_address=""
-  local current_prefix=""
-  local current_gateway=""
-  local current_metric=""
-  local current_dns=""
-  local current_ssid=""
-  local current_password=""
+  local key value
 
-  # Initialize enabled state and DHCP settings using existing helpers
-  CFG_ENABLED["$int"]="$(get_current_interface_enabled "$int")"
-  CFG_DHCP4["$int"]="$(get_current_dhcp4 "$int")"
+  local enabled="no" dhcp4="yes" address="" gateway="" metric="" dns="" ssid="" password=""
 
-  # Retrieve current IP and prefix
-  current_address_with_prefix="$(get_current_address_and_prefix "$int")"
+  # The current config, not the current addresses, because an interface without a cable has no address whether it uses DHCP or not
+  while IFS="=" read -r key value; do
+    case "$key" in
+    enabled) enabled="$value" ;;
+    dhcp4) dhcp4="$value" ;;
+    address) address="$value" ;;
+    gateway) gateway="$value" ;;
+    metric) metric="$value" ;;
+    dns) dns="$value" ;;
+    ssid) ssid="$value" ;;
+    password) password="$value" ;;
+    esac
+  done < <(
+    if [ "$CURRENT_RENDERER" = "NetworkManager" ]; then
+      read_network_manager_config "$int"
+    else
+      read_netplan_config "$int"
+    fi
+  )
 
-  if [[ "$current_address_with_prefix" == */* ]]; then
-    current_address="${current_address_with_prefix%/*}"
-    current_prefix="${current_address_with_prefix#*/}"
+  CFG_ENABLED["$int"]="$enabled"
+  CFG_DHCP4["$int"]="$dhcp4"
+
+  if [[ "$address" == */* ]]; then
+    CFG_ADDRESS["$int"]="${address%/*}"
+    CFG_PREFIX["$int"]="${address#*/}"
+  else
+    CFG_ADDRESS["$int"]="$(get_default_ip_for_interface "$int")"
+    CFG_PREFIX["$int"]="24"
   fi
 
-  current_gateway="$(get_current_gateway "$int")"
-  current_metric="$(get_current_metric "$int")"
-  current_dns="$(get_current_dns "$int")"
-
-  CFG_ADDRESS["$int"]="${current_address:-$(get_default_ip_for_interface "$int")}"
-  CFG_PREFIX["$int"]="${current_prefix:-24}"
-
-  if [[ -n "$current_gateway" ]]; then
+  if [ -n "$gateway" ]; then
     CFG_GATEWAY_TO_INTERNET["$int"]="yes"
-    CFG_GATEWAY["$int"]="$current_gateway"
+    CFG_GATEWAY["$int"]="$gateway"
   else
     CFG_GATEWAY_TO_INTERNET["$int"]="no"
     CFG_GATEWAY["$int"]="$(get_default_gateway_for_interface "$int")"
   fi
 
-  CFG_METRIC["$int"]="${current_metric:-$(get_metric_for_interface "$int")}"
-  CFG_DNS["$int"]="${current_dns:-8.8.8.8}"
+  CFG_METRIC["$int"]="${metric:-$(get_metric_for_interface "$int")}"
+  CFG_DNS["$int"]="${dns:-8.8.8.8}"
 
   if is_wifi_interface "$int"; then
     CFG_TYPE["$int"]="wifi"
-
-    current_ssid="$(get_current_ssid "$int")"
-    CFG_SSID["$int"]="${current_ssid:-$(get_default_ssid)}"
-
-    CFG_PASSWORD["$int"]="$(get_default_wifi_password)"
+    CFG_SSID["$int"]="${ssid:-$(get_default_ssid)}"
+    CFG_PASSWORD["$int"]="${password:-$(get_default_wifi_password)}"
   else
     CFG_TYPE["$int"]="ethernet"
     CFG_SSID["$int"]=""
@@ -283,29 +305,43 @@ init_interface_defaults() {
   fi
 }
 
+# For example "DHCP 192.168.12.120/24", "DHCP, no cable" or "static 10.10.20.101/24, not connected"
 interface_summary() {
   local int="$1"
-  local enabled="${CFG_ENABLED[$int]}"
-  local dhcp="${CFG_DHCP4[$int]}"
+  local summary
 
-  if [ "$enabled" != "yes" ]; then
+  if [ "${CFG_ENABLED[$int]}" != "yes" ]; then
     echo "disabled"
     return
   fi
 
-  if [ "$dhcp" = "yes" ]; then
-    echo "DHCP"
+  if [ "${CFG_DHCP4[$int]}" = "yes" ]; then
+    local dhcp_address
+    dhcp_address=$(get_dhcp_address "$int")
+    summary="DHCP${dhcp_address:+ $dhcp_address}"
   else
+    summary="static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
     if [ "${CFG_GATEWAY_TO_INTERNET[$int]}" = "yes" ]; then
-      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]} metric ${CFG_METRIC[$int]}"
-    else
-      echo "static ${CFG_ADDRESS[$int]}/${CFG_PREFIX[$int]}"
+      summary="$summary via ${CFG_GATEWAY[$int]}"
     fi
   fi
+
+  if [ "$(get_link_state "$int")" = "down" ]; then
+    if [ "${CFG_TYPE[$int]}" = "wifi" ]; then
+      summary="$summary, not connected"
+    else
+      summary="$summary, no cable"
+    fi
+  elif [ "${CFG_DHCP4[$int]}" = "yes" ] && [ -z "$dhcp_address" ]; then
+    summary="$summary, waiting for address"
+  fi
+
+  echo "$summary"
 }
 
 edit_interface_menu() {
   local int="$1"
+  local choice="Enabled"
 
   while true; do
     local type="${CFG_TYPE[$int]}"
@@ -349,8 +385,8 @@ Choose option to edit:"
       fi
     fi
 
-    local choice
-    choice=$(whiptail --title "$TITLE - $int" --ok-button "Edit" --cancel-button "Back" --menu "$menu_text" \
+    # Keep the cursor on the last edited option
+    choice=$(whiptail --title "$TITLE - $int" --ok-button "Edit" --cancel-button "Back" --default-item "$choice" --menu "$menu_text" \
       22 70 12 "${menu_items[@]}" 3>&1 1>&2 2>&3)
     local ret_val=$?
 
@@ -391,12 +427,14 @@ Choose option to edit:"
       ;;
 
     "Static address")
-      local tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter static IP address for $int:" "${CFG_ADDRESS[$int]}") || continue
       CFG_ADDRESS["$int"]="$tmp"
       ;;
 
     "CIDR prefix")
-      local tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter CIDR prefix for $int, for example 24:" "${CFG_PREFIX[$int]}") || continue
       CFG_PREFIX["$int"]="$tmp"
       ;;
 
@@ -409,27 +447,32 @@ Choose option to edit:"
       ;;
 
     "Default gateway")
-      local tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter default gateway for $int:" "${CFG_GATEWAY[$int]}") || continue
       CFG_GATEWAY["$int"]="$tmp"
       ;;
 
     "Metric")
-      local tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter metric for $int. Only the active gateway with the lowest metric will be used for internet access:" "${CFG_METRIC[$int]}") || continue
       CFG_METRIC["$int"]="$tmp"
       ;;
 
     "DNS server")
-      local tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter DNS server address for $int:" "${CFG_DNS[$int]}") || continue
       CFG_DNS["$int"]="$tmp"
       ;;
 
     "Wi-Fi SSID")
-      local tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi SSID for $int:" "${CFG_SSID[$int]}") || continue
       CFG_SSID["$int"]="$tmp"
       ;;
 
     "Wi-Fi password")
-      local tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
+      local tmp
+      tmp=$(input_box "Enter Wi-Fi password for $int:" "${CFG_PASSWORD[$int]}") || continue
       CFG_PASSWORD["$int"]="$tmp"
       ;;
     esac
@@ -437,6 +480,8 @@ Choose option to edit:"
 }
 
 main_interface_menu() {
+  local choice="${INTERFACES[0]}"
+
   while true; do
     local menu_items=()
 
@@ -447,14 +492,13 @@ main_interface_menu() {
     # Blank separator line
     menu_items+=(" " " ")
 
-    menu_items+=("Cleanup" "Delete old netplan configs")
     menu_items+=("Save" "Generate netplan config and continue")
 
-    local choice
     choice=$(whiptail --title "$TITLE" \
       --ok-button "Select" \
+      --default-item "$choice" \
       --cancel-button "Cancel" \
-      --menu "Select an interface to configure:" \
+      --menu "Current config ($CURRENT_RENDERER) and link state.\nSelect an interface to configure:" \
       24 70 14 \
       "${menu_items[@]}" \
       3>&1 1>&2 2>&3)
@@ -468,10 +512,6 @@ main_interface_menu() {
         generate_netplan
         return
         ;;
-      "Cleanup")
-        delete_old_netplan_configs
-        ;;
-
       " ")
         # Blank separator line, ignore
         continue
@@ -528,6 +568,10 @@ generate_netplan() {
         echo "      dhcp6: no"
       } >>"$FILENAME"
 
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
+
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
           echo "      addresses:"
@@ -564,6 +608,10 @@ generate_netplan() {
         echo "      dhcp4: ${CFG_DHCP4[$int]}"
         echo "      dhcp6: no"
       } >>"$FILENAME"
+
+      if is_optional_interface "$int"; then
+        echo "      optional: true" >>"$FILENAME"
+      fi
 
       if [ "${CFG_DHCP4[$int]}" = "no" ]; then
         {
@@ -671,27 +719,50 @@ Run the Network Interface Names Fix first and then restart this script."
 }
 
 copy_and_apply_netplan() {
-  echo "Enabling systemd-networkd ..."
-  enable_systemd_networkd
-
-  echo "Disabling NetworkManager ..."
-  disable_network_manager
+  echo "Backing up current network configuration ..."
+  prepare_revert
 
   echo "Copying netplan ..."
-  sudo cp "$FILENAME" /etc/netplan/01-netcfg.yaml
-  sudo chmod 600 /etc/netplan/01-netcfg.yaml
+  sudo install -m 600 "$FILENAME" "$TARGET_FILE"
 
+  disable_other_netplan_configs
+
+  # Check the config before changing anything that could cut the network connection
   echo "Generating netplan ..."
-  sudo netplan generate
+  if ! sudo netplan generate; then
+    echo "The netplan config is not valid, restoring the previous config. Nothing was changed."
+    restore_netplan_files
+    return 1
+  fi
 
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    schedule_revert
+  fi
+
+  echo "Enabling systemd-networkd and disabling NetworkManager ..."
   echo "Applying netplan ..."
-  sudo netplan apply
+  if ! use_systemd_networkd || ! sudo netplan apply; then
+    echo "Applying the netplan config failed"
+    revert_now
+    return 1
+  fi
+
+  if [[ "${NON_INTERACTIVE_MODE:-0}" -ne 1 ]]; then
+    confirm_or_revert || return 1
+  else
+    sudo rm -rf "$REVERT_DIR"
+  fi
 
   echo "Done"
 }
 
 interactive_mode() {
   detect_interfaces
+
+  CURRENT_RENDERER="systemd-networkd"
+  if systemctl is-active --quiet NetworkManager; then
+    CURRENT_RENDERER="NetworkManager"
+  fi
 
   declare -gA CFG_TYPE
   declare -gA CFG_ENABLED
@@ -723,7 +794,10 @@ interactive_mode() {
 
 $netplan_preview
 
-Save to /etc/netplan/01-netcfg.yaml and apply?"; then
+Save to $TARGET_FILE and apply?
+Other configs in $NETPLAN_DIR will be renamed to *.yaml.bak.
+
+After the config is applied, press Enter in this terminal within $((REVERT_TIMEOUT - 10)) seconds to keep it, otherwise the previous config is restored. If this terminal loses its connection because of the change, log in again, any new login confirms the config."; then
       # User selected Yes
       break
     else
@@ -734,13 +808,6 @@ Save to /etc/netplan/01-netcfg.yaml and apply?"; then
 }
 
 non_interactive_mode() {
-  if [ "${NETWORKING_DELETE_PREVIOUS_NETPLAN_CONFIGS:-}" = "true" ]; then
-    echo "Removing previous netplan configs"
-    sudo rm -f /etc/netplan/*.yaml
-  else
-    echo "Keeping previous netplan configs"
-  fi
-
   network_config="${NETWORKING_NETPLAN_CONFIG:-}"
 
   if [ -z "$network_config" ]; then
@@ -762,7 +829,7 @@ main() {
   fi
 
   copy_and_apply_netplan
-  exit 0
+  exit $?
 }
 
 main "$@"
